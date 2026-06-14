@@ -1,0 +1,1 @@
+let int 2nome = 1;
