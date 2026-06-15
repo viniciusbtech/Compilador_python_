@@ -13,13 +13,13 @@ def main() -> int:
     source = sys.stdin.read()
 
     if not source.strip():
-        print("Erro: nenhum programa JSS foi fornecido na entrada padrão.", file=sys.stderr)
+        print("Erro: nenhum programa JSS foi fornecido na entrada padrão.")
         return 1
 
     try:
         analyze_source(source)
     except JSSCompilerError as error:
-        print(error, file=sys.stderr)
+        print(error)
         return 1
 
     print("Programa válido.")

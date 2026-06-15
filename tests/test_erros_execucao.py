@@ -1,16 +1,4 @@
-"""Testes de execução do compilador para entradas que devem gerar erro léxico.
-
-Este arquivo executa o programa principal de verdade, enviando o código JSS
-pela entrada padrão. Cada caso verifica:
-
-1. código de saída igual a 1;
-2. nenhuma mensagem de sucesso na saída padrão;
-3. mensagem exata de erro na saída de erro.
-
-Execute, na raiz do projeto:
-
-    pytest -v tests/test_erros_execucao.py
-"""
+"""Testes de execucao do compilador para entradas invalidas."""
 
 from __future__ import annotations
 
@@ -86,10 +74,7 @@ CASOS_DE_ERRO = [
 
 
 def executar_compilador(codigo_fonte: str) -> subprocess.CompletedProcess[str]:
-    """Executa main.py e envia o programa JSS pela entrada padrão."""
     ambiente = os.environ.copy()
-
-    # Permite que main.py encontre src/jss_compiler mesmo sem pip install -e .
     pythonpath_atual = ambiente.get("PYTHONPATH", "")
     ambiente["PYTHONPATH"] = (
         str(SRC_DIR)
@@ -118,16 +103,13 @@ def test_execucao_deve_retornar_erro_lexico(
     resultado = executar_compilador(codigo_fonte)
 
     assert resultado.returncode == 1
-    assert resultado.stdout == ""
-    assert resultado.stderr.strip() == erro_esperado
+    assert resultado.stdout.strip() == erro_esperado
+    assert resultado.stderr == ""
 
 
 def test_entrada_vazia_deve_retornar_erro() -> None:
     resultado = executar_compilador("")
 
     assert resultado.returncode == 1
-    assert resultado.stdout == ""
-    assert (
-        resultado.stderr.strip()
-        == "Erro: nenhum programa JSS foi fornecido na entrada padrão."
-    )
+    assert resultado.stdout.strip() == "Erro: nenhum programa JSS foi fornecido na entrada padrão."
+    assert resultado.stderr == ""

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .lexer import Lexer
 from .parser import Parser
+from .semantic import analyze_semantics
 
 
 def analyze_source(source: str) -> None:
@@ -12,4 +13,5 @@ def analyze_source(source: str) -> None:
     tokens = lexer.tokenize()
 
     parser = Parser(tokens)
-    parser.parse()
+    program = parser.parse()
+    analyze_semantics(program)

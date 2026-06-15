@@ -272,7 +272,79 @@ Erro sintatico:
 
 ```powershell
 Get-Content .\examples\erro_sintatico.jss -Raw | python .\main.py
+
+Get-Content .\examples\testes_jss_parser\aprovados\01_variaveis_constantes.jss -Raw | python .\main.py
 ```
+
+TABELA DE SIMBOLOS:
+Get-Content .\examples\sucesso_minimo.jss -Raw | .\.venv\Scripts\python.exe -m jss_compiler.debug_parser
+Get-Content caminhodocodigo -Raw | .\.venv\Scripts\python.exe -m jss_compiler.debug_parser
+
+## Atualizacao: analise semantica
+
+O front-end agora tambem executa a etapa de analise semantica depois do parser:
+
+```text
+arquivo .jss
+   -> lexer
+   -> tokens com linha/coluna
+   -> parser
+   -> AST + tabela de simbolos inicial
+   -> analisador semantico
+   -> programa validado semanticamente
+```
+
+Novo arquivo principal:
+
+```text
+src/jss_compiler/semantic.py
+```
+
+O `frontend.py` passou a chamar `analyze_semantics(program)` depois de construir a AST. Assim, `python .\main.py` valida erros lexicos, sintaticos e semanticos no mesmo fluxo.
+
+Regras semanticas implementadas:
+
+- linguagem case-sensitive: nomes com grafias diferentes continuam sendo identificadores distintos;
+- proibicao de redeclaracao de `let`, `const`, funcoes e classes no mesmo escopo;
+- escopo global, escopo de funcao/metodo/construtor e escopos de bloco para `let` e `const`;
+- validacao de tipos primitivos `int`, `real`, `str` e `bool`;
+- conversao implicita de `int` para `real` em atribuicoes e operacoes numericas quando permitido;
+- concatenacao com `+` quando algum operando e `str`;
+- operadores logicos e relacionais retornando `bool`, com validacao de operandos;
+- casts nativos `int(...)`, `real(...)`, `bool(...)` e `str(...)`;
+- vetores homogeneos e inicializacao por lista apenas na declaracao;
+- erro ao alterar constante ou elemento de vetor constante;
+- validacao de classes com atributos antes de metodos e ao menos um metodo por classe;
+- validacao de construtor, `this`, atributos, metodos e `new Classe(...)`;
+- proibicao de conflito entre nome de funcao e identificadores globais ja declarados;
+- `main`, quando declarada, deve ter lista de parametros vazia;
+- `break` apenas dentro de `while` ou `for`;
+- `return` compativel com o tipo da funcao ou metodo.
+
+As mensagens do CLI agora sao emitidas na saida padrao: confirmacao de sucesso, erro lexico, erro sintatico e erro semantico. Os erros indicam linha e coluna:
+
+```text
+Erro semantico na linha 3, coluna 5: constante 'x' nao pode ser alterada
+```
+
+Tambem foi adicionada uma bateria especifica:
+
+```powershell
+python -m pytest tests\test_semantic.py -v
+```
+
+Na estrutura do projeto, considere agora tambem:
+
+```text
+jss-compiler/
+|-- src/
+|   `-- jss_compiler/
+|       |-- semantic.py
+|       `-- frontend.py  # integra lexer, parser e semantico
+`-- tests/
+    `-- test_semantic.py
+```
+
 
 ## Proximas etapas
 

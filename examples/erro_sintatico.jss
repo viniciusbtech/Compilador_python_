@@ -1,11 +1,15 @@
+
+
 function void main() {
-    let int numero = 10;
-    console.log(numero);
+    let int [3] l1 = [0 + 1, 1 + 2, 2 + 3];
+let int [3] l2;
+    l2[0] = 1;
+    l2[1] = 10;
+    l2[2] = 100;
 
-    //if (x > 5 { return 1; }  OK!!! deu errro
-    //if (x > 5) { return 1 }  OKK!! DEU ERRO
-    5+
- 
-
-
+    let Ponto p1;
+    p1 = new Ponto (1 ,2);
+    p1 = null;
+    const Ponto p2 = new Ponto (10 ,100);
 }
+
