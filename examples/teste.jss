@@ -1,6 +1,21 @@
-let int [3] l1 = [0+1 ,1+2 ,2+3];
-let int [3] l2;
-l2 [0] = 1;
-l2 [1] = 10;
-l2 [2] = 100;
-const str[3] nomes = ["Ana", "Bruno", "Carlos"];
+class Ponto {
+    int x;
+    int y;
+    Ponto constructor(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+    int soma() {
+        return this.x + this.y;
+    }
+}
+
+let int [3] valores = [1, 2, 3];
+const str titulo = "ponto";
+
+function void main() {
+    let Ponto p = new Ponto(1, 2);
+    let real total = p.soma() + 1.5;
+    console.log(titulo + ": " + str(total));
+    return;
+}

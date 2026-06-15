@@ -54,6 +54,7 @@ O compilador le o programa JSS pela entrada padrao:
 
 ```powershell
 Get-Content .\examples\sucesso_minimo.jss -Raw | python .\main.py
+Get-Content .\examples\sucesso_minimo.jss -Raw | python .\main.py
 ```
 
 Saida esperada para um programa lexica e sintaticamente valido:
