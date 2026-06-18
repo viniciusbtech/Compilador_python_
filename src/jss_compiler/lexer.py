@@ -34,6 +34,7 @@ class Lexer:
         "null": TokenType.NULL,
  
         "input": TokenType.INPUT,
+        "console.log": TokenType.CONSOLE_LOG,
 
         "int": TokenType.TYPE_INT,
         "real": TokenType.TYPE_REAL,
@@ -175,8 +176,21 @@ class Lexer:
             self._advance()
 
         lexeme = self.source[start : self.current]
+        if lexeme == "console" and self._matches_console_log_suffix():
+            for _ in range(4):
+                self._advance()
+            return Token(TokenType.CONSOLE_LOG, "console.log", line, column)
+
         token_type = self.KEYWORDS.get(lexeme, TokenType.IDENTIFIER)
         return Token(token_type, lexeme, line, column)
+
+    def _matches_console_log_suffix(self) -> bool:
+        if not self.source.startswith(".log", self.current):
+            return False
+        next_position = self.current + 4
+        if next_position >= len(self.source):
+            return True
+        return not self._is_identifier_part(self.source[next_position])
 
     def _number(self, start: int, line: int, column: int) -> Token:
         while self._peek().isdigit():

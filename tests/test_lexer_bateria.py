@@ -28,7 +28,7 @@ def lexemas_sem_eof(source: str) -> list[str]:
 def test_reconhece_todas_as_palavras_reservadas_incluindo_input() -> None:
     source = (
         "let const function void if else while for break return class "
-        "constructor new this true false null input"
+        "constructor new this true false null input console.log"
     )
 
     assert tipos_sem_eof(source) == [
@@ -50,6 +50,7 @@ def test_reconhece_todas_as_palavras_reservadas_incluindo_input() -> None:
         TokenType.FALSE,
         TokenType.NULL,
         TokenType.INPUT,
+        TokenType.CONSOLE_LOG,
     ]
 
 
@@ -264,11 +265,9 @@ def test_input_possui_token_proprio() -> None:
     ]
 
 
-def test_console_log_e_reconhecido_com_identificadores_e_ponto() -> None:
+def test_console_log_possui_token_proprio() -> None:
     assert tipos_sem_eof('console.log("Olá");') == [
-        TokenType.IDENTIFIER,
-        TokenType.DOT,
-        TokenType.IDENTIFIER,
+        TokenType.CONSOLE_LOG,
         TokenType.LEFT_PAREN,
         TokenType.STRING_LITERAL,
         TokenType.RIGHT_PAREN,

@@ -33,7 +33,7 @@ from .ast_nodes import (
     VarDeclaration,
     WhileStatement,
 )
-from .errors import SyntaxErrorJSS
+from .errors import RawSyntaxErrorJSS, SyntaxErrorJSS
 from .tokens import Token, TokenType
 
 
@@ -111,8 +111,9 @@ class Parser:
         if self._match(TokenType.CLASS):
             return self._class_declaration(self._previous())
 
-        token = self._peek()
-        raise self._error(token, "declaracao global invalida")
+        expression = self._expression()
+        self._consume_semicolon("esperado ';' apos expressao")
+        return ExpressionStatement(line=expression.line, column=expression.column, expression=expression)
 
     def _variable_declaration(self, start: Token, constant: bool) -> VarDeclaration:
         type_node = self._type(allow_void=False)
@@ -274,8 +275,14 @@ class Parser:
         self._consume(TokenType.LEFT_PAREN, "esperado '('")
         params: list[Parameter] = []
         if not self._check(TokenType.RIGHT_PAREN):
+            if self._check(TokenType.LEFT_BRACE):
+                token = self._peek()
+                raise self._error(token, "esperado tipo ) antes de {")
             params.append(self._parameter())
             while self._match(TokenType.COMMA):
+                if self._check(TokenType.LEFT_BRACE):
+                    token = self._peek()
+                    raise self._error(token, "esperado tipo ) antes de {")
                 params.append(self._parameter())
         self._consume(TokenType.RIGHT_PAREN, "esperado ')' apos parametros")
         return params
@@ -329,10 +336,27 @@ class Parser:
         if self._match(TokenType.FUNCTION):
             token = self._previous()
             raise self._error(token, "funcao nao pode ser declarada dentro de bloco")
+        if self._check_any({TokenType.TYPE_INT, TokenType.TYPE_REAL, TokenType.TYPE_STR, TokenType.TYPE_BOOL}):
+            self._reject_invalid_type_statement()
 
         expression = self._expression()
         self._consume_semicolon("esperado ';' apos expressao")
         return ExpressionStatement(line=expression.line, column=expression.column, expression=expression)
+
+    def _reject_invalid_type_statement(self) -> None:
+        type_token = self._peek()
+        next_token = self.tokens[self.current + 1] if self.current + 1 < len(self.tokens) else type_token
+        if next_token.type is TokenType.LEFT_PAREN:
+            return
+        if next_token.type not in {TokenType.SEMICOLON, TokenType.IDENTIFIER}:
+            raise RawSyntaxErrorJSS(
+                (
+                    "Erro de Sintaxe: Esperava ';' ou um identificador após "
+                    f"'{type_token.lexeme}', mas encontrou '{next_token.lexeme}'."
+                ),
+                next_token.line,
+                next_token.column,
+            )
 
     def _if_statement(self, start: Token) -> IfStatement:
         self._consume(TokenType.LEFT_PAREN, "esperado '(' apos if")
@@ -517,7 +541,7 @@ class Parser:
         if self._match(TokenType.NULL):
             token = self._previous()
             return Literal(token.line, token.column, None, "null")
-        if self._match(TokenType.IDENTIFIER, TokenType.INPUT):
+        if self._match(TokenType.IDENTIFIER, TokenType.INPUT, TokenType.CONSOLE_LOG):
             token = self._previous()
             return Identifier(token.line, token.column, token.lexeme)
         if self._match(TokenType.TYPE_INT, TokenType.TYPE_REAL, TokenType.TYPE_BOOL, TokenType.TYPE_STR):
@@ -586,7 +610,7 @@ class Parser:
     @staticmethod
     def _is_native_callee(expression: Node) -> bool:
         if isinstance(expression, Identifier):
-            return expression.name in {"input", "int", "real", "bool", "str"}
+            return expression.name in {"input", "int", "real", "bool", "str", "console.log"}
         if isinstance(expression, AttributeAccess) and isinstance(expression.object_expr, Identifier):
             return expression.object_expr.name == "console" and expression.attribute == "log"
         return False

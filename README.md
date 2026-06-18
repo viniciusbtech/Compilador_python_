@@ -54,7 +54,18 @@ O compilador le o programa JSS pela entrada padrao:
 
 ```powershell
 Get-Content .\examples\sucesso_minimo.jss -Raw | python .\main.py
-Get-Content .\examples\sucesso_minimo.jss -Raw | python .\main.py
+Get-Content .\examples\erro_sintatico.jss -Raw | python .\main.py
+Get-Content .\examples\erro_lexico.jss -Raw | python .\main.py
+
+#Testes
+Get-Content .\examples\teste1.jss -Raw | python .\main.py
+Get-Content .\examples\teste2.jss -Raw | python .\main.py
+Get-Content .\examples\teste3.jss -Raw | python .\main.py
+Get-Content .\examples\teste4.jss -Raw | python .\main.py
+Get-Content .\examples\teste5.jss -Raw | python .\main.py
+
+#Testes automatizado
+powershell -ExecutionPolicy Bypass -File .\testar_tudo.ps1
 ```
 
 Saida esperada para um programa lexica e sintaticamente valido:
@@ -309,14 +320,17 @@ Regras semanticas implementadas:
 - proibicao de redeclaracao de `let`, `const`, funcoes e classes no mesmo escopo;
 - escopo global, escopo de funcao/metodo/construtor e escopos de bloco para `let` e `const`;
 - validacao de tipos primitivos `int`, `real`, `str` e `bool`;
-- conversao implicita de `int` para `real` em atribuicoes e operacoes numericas quando permitido;
-- concatenacao com `+` quando algum operando e `str`;
+- sem conversoes implicitas: mudanca de tipo exige cast explicito com `int(...)`, `real(...)`, `bool(...)` ou `str(...)`;
+- proibicao de mistura de tipos em atribuicoes, operacoes aritmeticas, concatenacao e comparacoes;
+- concatenacao com `+` apenas entre operandos `str`;
 - operadores logicos e relacionais retornando `bool`, com validacao de operandos;
 - casts nativos `int(...)`, `real(...)`, `bool(...)` e `str(...)`;
 - vetores homogeneos e inicializacao por lista apenas na declaracao;
 - erro ao alterar constante ou elemento de vetor constante;
-- validacao de classes com atributos antes de metodos e ao menos um metodo por classe;
+- comandos de expressao no escopo global, permitindo atribuicoes fora de funcoes;
+- validacao de classes com atributos antes de construtores/metodos, ao menos uma variavel e ao menos um construtor;
 - validacao de construtor, `this`, atributos, metodos e `new Classe(...)`;
+- metodos em classes sao opcionais;
 - proibicao de conflito entre nome de funcao e identificadores globais ja declarados;
 - `main`, quando declarada, deve ter lista de parametros vazia;
 - `break` apenas dentro de `while` ou `for`;

@@ -12,7 +12,7 @@ def token_types(source: str) -> list[TokenType]:
 def test_recognizes_keywords_and_types() -> None:
     source = (
         "let const function void if else while for break return class "
-        "constructor new this true false null int real str bool"
+        "constructor new this true false null input console.log int real str bool"
     )
 
     assert token_types(source) == [
@@ -33,6 +33,8 @@ def test_recognizes_keywords_and_types() -> None:
         TokenType.TRUE,
         TokenType.FALSE,
         TokenType.NULL,
+        TokenType.INPUT,
+        TokenType.CONSOLE_LOG,
         TokenType.TYPE_INT,
         TokenType.TYPE_REAL,
         TokenType.TYPE_STR,

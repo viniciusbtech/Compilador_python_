@@ -17,6 +17,13 @@ class SyntaxErrorJSS(JSSCompilerError):
         super().__init__(f"Erro sintático na linha {line}, coluna {column}: {message}")
 
 
+class RawSyntaxErrorJSS(SyntaxErrorJSS):
+    def __init__(self, message: str, line: int, column: int) -> None:
+        JSSCompilerError.__init__(self, message)
+        self.line = line
+        self.column = column
+
+
 class SemanticError(JSSCompilerError):
     def __init__(self, message: str, line: int, column: int) -> None:
         super().__init__(f"Erro semântico na linha {line}, coluna {column}: {message}")

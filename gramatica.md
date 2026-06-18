@@ -4,6 +4,7 @@ declaracao_global ::= declaracao_variavel
                     | declaracao_constante
                     | declaracao_funcao
                     | declaracao_classe
+                    | comando_expressao
 
 declaracao_variavel ::= "let" tipo vetor_tipo? declarador ("," declarador)* ";"
 declaracao_constante ::= "const" tipo vetor_tipo? declarador ("," declarador)* ";"
@@ -119,6 +120,7 @@ primario ::= INTEIRO
            | "null"
            | IDENTIFICADOR
            | "input"
+           | "console.log"
            | "this"
            | "new" IDENTIFICADOR "(" argumentos? ")"
            | "(" expressao ")"

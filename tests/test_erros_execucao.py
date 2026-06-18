@@ -70,6 +70,11 @@ CASOS_DE_ERRO = [
         "Erro léxico na linha 1, coluna 13: caractere inválido '`'",
         id="template-string-nao-suportada",
     ),
+    pytest.param(
+        "function void main() {\n    int let x = 10;\n}",
+        "Erro de Sintaxe: Esperava ';' ou um identificador após 'int', mas encontrou 'let'.",
+        id="let-apos-tipo-primitivo",
+    ),
 ]
 
 

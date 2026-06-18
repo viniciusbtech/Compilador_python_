@@ -145,6 +145,13 @@ def test_rejeita_ponto_e_virgula_ausente() -> None:
         parse("let int x")
 
 
+def test_erro_parametros_informa_parentese_ausente_antes_do_bloco() -> None:
+    with pytest.raises(SyntaxErrorJSS) as exception:
+        parse("function void main( {")
+
+    assert str(exception.value) == "Erro sintático na linha 1, coluna 21: esperado tipo ) antes de {"
+
+
 def test_erro_no_fim_do_arquivo_usa_linha_do_ultimo_token_real() -> None:
     source = "let int a;\nlet int b;\nlet int c\n"
 

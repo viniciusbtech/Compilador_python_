@@ -63,7 +63,7 @@ const str titulo = "ponto";
 
 function void main() {
     let Ponto p = new Ponto(1, 2);
-    let real total = p.soma() + 1.5;
+    let real total = real(p.soma()) + 1.5;
     console.log(titulo + ": " + str(total));
     return;
 }
@@ -127,8 +127,8 @@ def test_operadores_e_casts_validam_tipos() -> None:
     analyze_source(
         """
 function void main() {
-    let real x = 1 + 2.5;
-    let str y = "valor=" + x;
+    let real x = real(1) + 2.5;
+    let str y = "valor=" + str(x);
     let bool ok = bool(1) || false;
 }
 """
@@ -153,17 +153,53 @@ class Ruim {
 """,
         "atributos devem ser declarados antes de metodos",
     )
+    analyze_source(
+        """
+class SemMetodo {
+    int x;
+    SemMetodo constructor() {}
+}
+"""
+    )
     assert_semantic_error(
         """
-class Vazia {
+class SemConstrutor {
     int x;
 }
 """,
-        "classe deve possuir ao menos um metodo",
+        "classe deve possuir ao menos um construtor",
+    )
+    assert_semantic_error(
+        """
+class SemVariavel {
+    SemVariavel constructor() {}
+}
+""",
+        "classe deve possuir ao menos uma variavel",
     )
     assert_semantic_error(
         "function void main(int argc) {}",
         "funcao main nao deve possuir parametros",
+    )
+
+
+def test_rejeita_conversao_implicita_e_mistura_de_tipos() -> None:
+    assert_semantic_error(
+        "let real x = 1;",
+        "tipo incompativel: esperado real, recebido int",
+    )
+    assert_semantic_error(
+        "let real x = 1 + 2.5;",
+        "tipos misturados nao sao permitidos: int e real",
+    )
+
+
+def test_permite_atribuicao_global_apos_declaracao() -> None:
+    analyze_source(
+        """
+let int x = 1;
+x = 2;
+"""
     )
 
 

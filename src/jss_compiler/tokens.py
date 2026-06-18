@@ -33,6 +33,7 @@ class TokenType(Enum):
     NULL = auto()
 
     INPUT = auto()
+    CONSOLE_LOG = auto()
 
     TYPE_INT = auto()
     TYPE_REAL = auto()

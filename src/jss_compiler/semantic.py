@@ -154,6 +154,8 @@ class SemanticAnalyzer:
             self._check_function(declaration)
         elif isinstance(declaration, ClassDeclaration):
             self._check_class(declaration)
+        elif isinstance(declaration, ExpressionStatement):
+            self._expression_type(declaration.expression)
 
     def _check_function(self, declaration: FunctionDeclaration | MethodDeclaration) -> None:
         previous_function = self.current_function
@@ -178,7 +180,6 @@ class SemanticAnalyzer:
 
     def _check_class(self, declaration: ClassDeclaration) -> None:
         class_info = self.classes[declaration.name]
-        saw_method = False
         saw_non_attribute = False
 
         for member in declaration.members:
@@ -208,7 +209,6 @@ class SemanticAnalyzer:
 
             saw_non_attribute = True
             if isinstance(member, MethodDeclaration):
-                saw_method = True
                 self._ensure_not_reserved(member.name, member)
                 if member.name in class_info.methods:
                     raise SemanticError(
@@ -231,13 +231,25 @@ class SemanticAnalyzer:
                         member.line,
                         member.column,
                     )
+                if class_info.constructor_params is not None:
+                    raise SemanticError(
+                        "classe deve possuir apenas um construtor",
+                        member.line,
+                        member.column,
+                    )
                 class_info.constructor_params = [
                     self._type_from_node(param.type_node) for param in member.params
                 ]
 
-        if not saw_method:
+        if not class_info.attributes:
             raise SemanticError(
-                "classe deve possuir ao menos um metodo",
+                "classe deve possuir ao menos uma variavel",
+                declaration.line,
+                declaration.column,
+            )
+        if class_info.constructor_params is None:
+            raise SemanticError(
+                "classe deve possuir ao menos um construtor",
                 declaration.line,
                 declaration.column,
             )
@@ -488,6 +500,11 @@ class SemanticAnalyzer:
                 self._expression_type(argument)
             return TypeInfo("void")
 
+        if isinstance(expression.callee, Identifier) and expression.callee.name == "console.log":
+            for argument in expression.arguments:
+                self._expression_type(argument)
+            return TypeInfo("void")
+
         if (
             isinstance(expression.callee, AttributeAccess)
             and isinstance(expression.callee.object_expr, Identifier)
@@ -524,16 +541,18 @@ class SemanticAnalyzer:
         if operator is TokenType.PLUS:
             if left.is_array or right.is_array:
                 raise SemanticError("operador + nao aceita vetores", expression.line, expression.column)
-            if left.name == "str" or right.name == "str":
+            self._require_same_type(left, right, expression)
+            if left.name == "str":
                 return TypeInfo("str")
             self._require_numeric(left, expression.left)
             self._require_numeric(right, expression.right)
-            return TypeInfo("real" if "real" in {left.name, right.name} else "int")
+            return TypeInfo(left.name)
 
         if operator in {TokenType.MINUS, TokenType.STAR, TokenType.SLASH, TokenType.PERCENT, TokenType.POWER}:
+            self._require_same_type(left, right, expression)
             self._require_numeric(left, expression.left)
             self._require_numeric(right, expression.right)
-            return TypeInfo("real" if "real" in {left.name, right.name} else "int")
+            return TypeInfo(left.name)
 
         if operator in {TokenType.AND_AND, TokenType.OR_OR}:
             if left.name != "bool" or right.name != "bool" or left.is_array or right.is_array:
@@ -585,10 +604,12 @@ class SemanticAnalyzer:
         if operator is TokenType.PLUS and (target_type.name == "str" or value_type.name == "str"):
             if target_type.is_array or value_type.is_array:
                 raise SemanticError("atribuicao composta nao aceita vetores", expression.line, expression.column)
+            self._require_same_type(target_type, value_type, expression)
             return TypeInfo("str")
+        self._require_same_type(target_type, value_type, expression)
         self._require_numeric(target_type, expression.target)
         self._require_numeric(value_type, expression.value)
-        return TypeInfo("real" if "real" in {target_type.name, value_type.name} else "int")
+        return TypeInfo(target_type.name)
 
     def _ensure_assignable_target(self, target: Node) -> TypeInfo:
         if isinstance(target, Identifier):
@@ -641,6 +662,14 @@ class SemanticAnalyzer:
         if type_info.name not in NUMERIC_TYPES or type_info.is_array:
             raise SemanticError("operacao aritmetica requer int ou real", node.line, node.column)
 
+    def _require_same_type(self, left: TypeInfo, right: TypeInfo, node: Node) -> None:
+        if left.name != right.name or left.is_array != right.is_array:
+            raise SemanticError(
+                f"tipos misturados nao sao permitidos: {left.display()} e {right.display()}",
+                node.line,
+                node.column,
+            )
+
     def _require_assignable(self, target: TypeInfo, value: TypeInfo, value_node: Node) -> None:
         if target.is_array != value.is_array:
             raise SemanticError(
@@ -649,8 +678,6 @@ class SemanticAnalyzer:
                 value_node.column,
             )
         if target.name == value.name:
-            return
-        if target.name == "real" and value.name == "int" and not target.is_array:
             return
         if value.name == "null" and target.name not in PRIMITIVE_TYPES:
             return
@@ -665,7 +692,7 @@ class SemanticAnalyzer:
             return left.is_array == right.is_array and left.name == right.name
         if left.name == right.name:
             return True
-        return left.name in NUMERIC_TYPES and right.name in NUMERIC_TYPES
+        return False
 
     def _type_from_node(self, type_node: TypeNode) -> TypeInfo:
         self._ensure_valid_type(type_node)
