@@ -49,9 +49,12 @@ RESERVED_WORDS = set(Lexer.KEYWORDS)
 class TypeInfo:
     name: str
     is_array: bool = False
+    ndim: int = 1
 
     def display(self) -> str:
-        return f"{self.name}[]" if self.is_array else self.name
+        if not self.is_array:
+            return self.name
+        return f"{self.name}{'[]' * self.ndim}"
 
 
 @dataclass(slots=True)
@@ -332,12 +335,19 @@ class SemanticAnalyzer:
     def _declare_variables(self, declaration: VarDeclaration, scope: Scope, check_values: bool) -> None:
         self._ensure_valid_type(declaration.type_node)
         base_type = self._type_from_node(declaration.type_node)
+        if check_values and declaration.type_node.array_size2 is not None:
+            size2_type = self._expression_type(declaration.type_node.array_size2)
+            if size2_type.name != "int" or size2_type.is_array:
+                raise SemanticError(
+                    "tamanho de matriz deve ser int",
+                    declaration.type_node.array_size2.line,
+                    declaration.type_node.array_size2.column,
+                )
         for declarator in declaration.declarators:
             self._ensure_not_reserved(declarator.name, declarator)
-            type_info = TypeInfo(
-                base_type.name,
-                declaration.type_node.is_array or declarator.array_size is not None,
-            )
+            is_array = declaration.type_node.is_array or declarator.array_size is not None
+            ndim = 2 if declaration.type_node.array_size2 is not None else 1
+            type_info = TypeInfo(base_type.name, is_array, ndim)
             scope.define(
                 SemanticSymbol(
                     declarator.name,
@@ -427,6 +437,8 @@ class SemanticAnalyzer:
                 raise SemanticError("indice de vetor deve ser int", expression.index.line, expression.index.column)
             if not collection_type.is_array:
                 raise SemanticError("acesso por indice requer vetor", expression.line, expression.column)
+            if collection_type.ndim == 2:
+                return TypeInfo(collection_type.name, is_array=True, ndim=1)
             return TypeInfo(collection_type.name)
         if isinstance(expression, Call):
             return self._call_type(expression)
@@ -657,6 +669,8 @@ class SemanticAnalyzer:
                 raise SemanticError("indice de vetor deve ser int", target.index.line, target.index.column)
             if not collection_type.is_array:
                 raise SemanticError("atribuicao por indice requer vetor", target.line, target.column)
+            if collection_type.ndim == 2:
+                return TypeInfo(collection_type.name, is_array=True, ndim=1)
             return TypeInfo(collection_type.name)
 
         if isinstance(target, AttributeAccess):
@@ -728,7 +742,8 @@ class SemanticAnalyzer:
 
     def _type_from_node(self, type_node: TypeNode) -> TypeInfo:
         self._ensure_valid_type(type_node)
-        return TypeInfo(type_node.name, type_node.is_array)
+        ndim = 2 if type_node.array_size2 is not None else 1
+        return TypeInfo(type_node.name, type_node.is_array, ndim)
 
     def _ensure_valid_type(self, type_node: TypeNode) -> None:
         if type_node.name == "void":

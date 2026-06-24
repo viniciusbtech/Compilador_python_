@@ -147,6 +147,10 @@ class Parser:
             self._consume(TokenType.RIGHT_BRACKET, "esperado ']' apos tamanho do vetor")
             type_node.is_array = True
             type_node.array_size = size
+            if self._match(TokenType.LEFT_BRACKET):
+                size2 = self._expression()
+                self._consume(TokenType.RIGHT_BRACKET, "esperado ']' apos tamanho da segunda dimensao")
+                type_node.array_size2 = size2
 
         declarators = [self._declarator(type_node.is_array)]
         while self._match(TokenType.COMMA):
@@ -163,7 +167,12 @@ class Parser:
         )
         category = "constante" if constant else "variavel"
         for declarator in declarators:
-            symbol_type = type_node.name + ("[]" if type_node.is_array or declarator.array_size else "")
+            if type_node.array_size2 is not None:
+                symbol_type = type_node.name + "[][]"
+            elif type_node.is_array or declarator.array_size:
+                symbol_type = type_node.name + "[]"
+            else:
+                symbol_type = type_node.name
             self._register_symbol(declarator.name, category, symbol_type, declarator)
         return declaration
 

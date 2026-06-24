@@ -35,6 +35,7 @@ class TypeNode(Node):
     name: str
     is_array: bool = False
     array_size: Node | None = None
+    array_size2: Node | None = None
 
 
 @dataclass(slots=True)
