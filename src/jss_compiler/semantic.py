@@ -311,7 +311,10 @@ class SemanticAnalyzer:
         elif isinstance(statement, ForStatement):
             self.current_scope = Scope("for", self.current_scope)
             if statement.initializer is not None:
-                self._expression_type(statement.initializer)
+                if isinstance(statement.initializer, VarDeclaration):
+                    self._declare_variables(statement.initializer, self.current_scope, check_values=True)
+                else:
+                    self._expression_type(statement.initializer)
             if statement.condition is not None:
                 self._expect_bool(statement.condition)
             if statement.increment is not None:
@@ -496,8 +499,16 @@ class SemanticAnalyzer:
             return TypeInfo(expression.callee.name)
 
         if isinstance(expression.callee, Identifier) and expression.callee.name == "input":
+            if not expression.arguments:
+                raise SemanticError("input requer ao menos uma variavel", expression.line, expression.column)
             for argument in expression.arguments:
-                self._expression_type(argument)
+                argument_type = self._ensure_assignable_target(argument)
+                if argument_type.is_array or argument_type.name not in {"int", "real", "str"}:
+                    raise SemanticError(
+                        "input aceita apenas variaveis int, real ou str",
+                        argument.line,
+                        argument.column,
+                    )
             return TypeInfo("void")
 
         if isinstance(expression.callee, Identifier) and expression.callee.name == "console.log":
@@ -541,18 +552,23 @@ class SemanticAnalyzer:
         if operator is TokenType.PLUS:
             if left.is_array or right.is_array:
                 raise SemanticError("operador + nao aceita vetores", expression.line, expression.column)
-            self._require_same_type(left, right, expression)
-            if left.name == "str":
+            if left.name == "str" or right.name == "str":
+                if left.name not in PRIMITIVE_TYPES or right.name not in PRIMITIVE_TYPES:
+                    raise SemanticError("concatenacao requer tipos simples", expression.line, expression.column)
                 return TypeInfo("str")
             self._require_numeric(left, expression.left)
             self._require_numeric(right, expression.right)
-            return TypeInfo(left.name)
+            return self._numeric_result_type(left, right)
 
-        if operator in {TokenType.MINUS, TokenType.STAR, TokenType.SLASH, TokenType.PERCENT, TokenType.POWER}:
-            self._require_same_type(left, right, expression)
+        if operator in {TokenType.MINUS, TokenType.STAR, TokenType.SLASH}:
             self._require_numeric(left, expression.left)
             self._require_numeric(right, expression.right)
-            return TypeInfo(left.name)
+            return self._numeric_result_type(left, right)
+
+        if operator in {TokenType.PERCENT, TokenType.POWER}:
+            self._require_int(left, expression.left)
+            self._require_int(right, expression.right)
+            return TypeInfo("int")
 
         if operator in {TokenType.AND_AND, TokenType.OR_OR}:
             if left.name != "bool" or right.name != "bool" or left.is_array or right.is_array:
@@ -604,12 +620,18 @@ class SemanticAnalyzer:
         if operator is TokenType.PLUS and (target_type.name == "str" or value_type.name == "str"):
             if target_type.is_array or value_type.is_array:
                 raise SemanticError("atribuicao composta nao aceita vetores", expression.line, expression.column)
-            self._require_same_type(target_type, value_type, expression)
+            if target_type.name not in PRIMITIVE_TYPES or value_type.name not in PRIMITIVE_TYPES:
+                raise SemanticError("concatenacao requer tipos simples", expression.line, expression.column)
             return TypeInfo("str")
-        self._require_same_type(target_type, value_type, expression)
+
+        if operator in {TokenType.PERCENT, TokenType.POWER}:
+            self._require_int(target_type, expression.target)
+            self._require_int(value_type, expression.value)
+            return TypeInfo("int")
+
         self._require_numeric(target_type, expression.target)
         self._require_numeric(value_type, expression.value)
-        return TypeInfo(target_type.name)
+        return self._numeric_result_type(target_type, value_type)
 
     def _ensure_assignable_target(self, target: Node) -> TypeInfo:
         if isinstance(target, Identifier):
@@ -661,6 +683,16 @@ class SemanticAnalyzer:
     def _require_numeric(self, type_info: TypeInfo, node: Node) -> None:
         if type_info.name not in NUMERIC_TYPES or type_info.is_array:
             raise SemanticError("operacao aritmetica requer int ou real", node.line, node.column)
+
+    def _require_int(self, type_info: TypeInfo, node: Node) -> None:
+        if type_info.name != "int" or type_info.is_array:
+            raise SemanticError("operacao requer int", node.line, node.column)
+
+    @staticmethod
+    def _numeric_result_type(left: TypeInfo, right: TypeInfo) -> TypeInfo:
+        if left.name == "real" or right.name == "real":
+            return TypeInfo("real")
+        return TypeInfo("int")
 
     def _require_same_type(self, left: TypeInfo, right: TypeInfo, node: Node) -> None:
         if left.name != right.name or left.is_array != right.is_array:

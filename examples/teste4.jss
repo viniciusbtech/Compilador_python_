@@ -1,4 +1,5 @@
+let Ponto p1;
+
 function void main() {
-    let int [3] v;
-    v = [1, 2, 3];
+  p1 = new Ponto(1, 2);
 }

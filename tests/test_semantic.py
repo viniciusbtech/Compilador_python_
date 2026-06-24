@@ -143,6 +143,185 @@ function void main() {
     )
 
 
+def test_funcoes_nativas_input_e_console_log_seguem_especificacao() -> None:
+    analyze_source(
+        """
+function void main() {
+    let int idade;
+    let real altura;
+    let str nome;
+    input(idade, altura, nome);
+    console.log();
+    console.log("dados", nome, idade + 1, altura);
+}
+"""
+    )
+
+
+def test_input_requer_variaveis_numericas_ou_string() -> None:
+    assert_semantic_error(
+        """
+function void main() {
+    let int idade;
+    input(idade + 1);
+}
+""",
+        "lado esquerdo da atribuicao deve ser atribuivel",
+    )
+    assert_semantic_error(
+        """
+function void main() {
+    const int idade = 1;
+    input(idade);
+}
+""",
+        "constante 'idade' nao pode ser alterada",
+    )
+    assert_semantic_error(
+        """
+function void main() {
+    let bool ativo;
+    input(ativo);
+}
+""",
+        "input aceita apenas variaveis int, real ou str",
+    )
+
+
+def test_input_requer_lista_nao_vazia() -> None:
+    assert_semantic_error(
+        """
+function void main() {
+    input();
+}
+""",
+        "input requer ao menos uma variavel",
+    )
+
+
+def test_comandos_de_controle_exigem_condicao_bool() -> None:
+    analyze_source(
+        """
+function void main() {
+    let int x = 1;
+    if (x > 0) {
+        x += 1;
+    } else if (x == 0) {
+        x = 2;
+    } else {
+        x = 3;
+    }
+    while (x < 10) {
+        break;
+    }
+    for (x = 0; x < 3; x += 1) {
+        console.log(x);
+    }
+}
+"""
+    )
+    assert_semantic_error(
+        """
+function void main() {
+    if (1) {
+        console.log();
+    }
+}
+""",
+        "condicao deve ser bool",
+    )
+    assert_semantic_error(
+        """
+function void main() {
+    while ("sim") {
+        break;
+    }
+}
+""",
+        "condicao deve ser bool",
+    )
+    assert_semantic_error(
+        """
+function void main() {
+    let int x = 0;
+    for (x = 0; x; x += 1) {
+        break;
+    }
+}
+""",
+        "condicao deve ser bool",
+    )
+
+
+def test_for_aceita_declaracao_let_no_inicializador() -> None:
+    analyze_source(
+        """
+function void main() {
+    for (let int i = 0; i < 5; i = i + 1) {
+        console.log(i);
+    }
+}
+"""
+    )
+
+
+def test_operadores_aritmeticos_aplicam_conversoes_da_especificacao() -> None:
+    analyze_source(
+        """
+function void main() {
+    let real soma = 1 + 2.5;
+    let real subtracao = 10.0 - 2;
+    let real multiplicacao = 2 * 3.5;
+    let real divisao = 5 / 2.0;
+    let int resto = 5 % 2;
+    let int potencia = 2 ** 3;
+    let str texto = "valor=" + 10 + true;
+}
+"""
+    )
+
+
+def test_operadores_percentual_e_exponenciacao_exigem_int() -> None:
+    assert_semantic_error(
+        """
+function void main() {
+    let real x = 5.0 % 2.0;
+}
+""",
+        "operacao requer int",
+    )
+    assert_semantic_error(
+        """
+function void main() {
+    let real x = 2.0 ** 3.0;
+}
+""",
+        "operacao requer int",
+    )
+
+
+def test_atribuicao_composta_respeita_tipo_do_destino() -> None:
+    analyze_source(
+        """
+function void main() {
+    let real total = 1.0;
+    total += 2;
+    let str texto = "valor=";
+    texto += 10;
+}
+"""
+    )
+    assert_semantic_error(
+        """
+function void main() {
+    let int total = 1;
+    total += 2.5;
+}
+""",
+        "tipo incompativel: esperado int, recebido real",
+    )
+
+
 def test_regras_de_classe_e_main() -> None:
     assert_semantic_error(
         """
@@ -183,14 +362,10 @@ class SemVariavel {
     )
 
 
-def test_rejeita_conversao_implicita_e_mistura_de_tipos() -> None:
+def test_rejeita_conversao_implicita_em_atribuicao_simples() -> None:
     assert_semantic_error(
         "let real x = 1;",
         "tipo incompativel: esperado real, recebido int",
-    )
-    assert_semantic_error(
-        "let real x = 1 + 2.5;",
-        "tipos misturados nao sao permitidos: int e real",
     )
 
 

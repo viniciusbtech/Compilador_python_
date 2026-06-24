@@ -78,6 +78,7 @@ class Parser:
         self.errors: list[SyntaxErrorJSS] = []
         self.symbols: list[Symbol] = []
         self.scope_stack = ["global"]
+        self.class_names = self._collect_class_names()
 
     def parse(self) -> Program:
         """Valida os tokens e devolve a AST do programa JSS."""
@@ -110,6 +111,30 @@ class Parser:
             return self._function_declaration(self._previous())
         if self._match(TokenType.CLASS):
             return self._class_declaration(self._previous())
+        if self._looks_like_global_declaration_without_keyword():
+            token = self._peek()
+            raise RawSyntaxErrorJSS(
+                (
+                    "Erro sintático na linha "
+                    f"{token.line}: declaração inválida. Esperado 'let', "
+                    "'const', 'function' ou 'class', mas encontrado "
+                    f"'{token.lexeme}'."
+                ),
+                token.line,
+                token.column,
+            )
+        if self._looks_like_unknown_global_assignment():
+            token = self._peek()
+            raise RawSyntaxErrorJSS(
+                (
+                    "Erro sintático na linha "
+                    f"{token.line}: declaração inválida. Esperado 'let', "
+                    "'const', 'function' ou 'class', mas encontrado "
+                    f"'{token.lexeme}'."
+                ),
+                token.line,
+                token.column,
+            )
 
         expression = self._expression()
         self._consume_semicolon("esperado ';' apos expressao")
@@ -123,9 +148,9 @@ class Parser:
             type_node.is_array = True
             type_node.array_size = size
 
-        declarators = [self._declarator()]
+        declarators = [self._declarator(type_node.is_array)]
         while self._match(TokenType.COMMA):
-            declarators.append(self._declarator())
+            declarators.append(self._declarator(type_node.is_array))
 
         self._consume_semicolon("esperado ';' apos declaracao")
 
@@ -142,7 +167,13 @@ class Parser:
             self._register_symbol(declarator.name, category, symbol_type, declarator)
         return declaration
 
-    def _declarator(self) -> Declarator:
+    def _declarator(self, type_is_array: bool = False) -> Declarator:
+        if self._check_reserved_word():
+            token = self._peek()
+            raise self._error(
+                token,
+                f"nome de variavel invalido: '{token.lexeme}' e palavra reservada",
+            )
         name = self._consume(TokenType.IDENTIFIER, "esperado identificador").lexeme
         token = self._previous()
         array_size = None
@@ -150,6 +181,8 @@ class Parser:
         values: list[Node] = []
 
         if self._match(TokenType.LEFT_BRACKET):
+            if type_is_array:
+                raise self._error(self._previous(), "matriz multidimensional nao permitida")
             array_size = self._expression()
             self._consume(TokenType.RIGHT_BRACKET, "esperado ']' apos indice/tamanho do vetor")
 
@@ -173,6 +206,8 @@ class Parser:
         )
 
     def _function_declaration(self, start: Token) -> FunctionDeclaration:
+        if self._check(TokenType.IDENTIFIER) and self._check_next(TokenType.LEFT_PAREN):
+            raise self._error(start, "function sem tipo de retorno")
         return_type = self._type(allow_void=True)
         name = self._consume(TokenType.IDENTIFIER, "esperado nome da funcao").lexeme
         name_token = self._previous()
@@ -387,8 +422,13 @@ class Parser:
 
     def _for_statement(self, start: Token) -> ForStatement:
         self._consume(TokenType.LEFT_PAREN, "esperado '(' apos for")
-        initializer = None if self._check(TokenType.SEMICOLON) else self._expression()
-        self._consume_semicolon("esperado ';' apos inicializacao do for")
+        if self._match(TokenType.LET):
+            initializer = self._variable_declaration(self._previous(), constant=False)
+        elif self._match(TokenType.CONST):
+            initializer = self._variable_declaration(self._previous(), constant=True)
+        else:
+            initializer = None if self._check(TokenType.SEMICOLON) else self._expression()
+            self._consume_semicolon("esperado ';' apos inicializacao do for")
         condition = None if self._check(TokenType.SEMICOLON) else self._expression()
         self._consume_semicolon("esperado ';' apos condicao do for")
         increment = None if self._check(TokenType.RIGHT_PAREN) else self._expression()
@@ -492,6 +532,15 @@ class Parser:
 
         while True:
             if self._match(TokenType.LEFT_PAREN):
+                if self._is_class_constructor_without_new(expression):
+                    raise RawSyntaxErrorJSS(
+                        (
+                            "Erro sintatico na linha "
+                            f"{expression.line}: criação de objeto deve usar 'new'."
+                        ),
+                        expression.line,
+                        expression.column,
+                    )
                 arguments = self._arguments_after_open_paren()
                 expression = Call(
                     line=expression.line,
@@ -615,6 +664,18 @@ class Parser:
             return expression.object_expr.name == "console" and expression.attribute == "log"
         return False
 
+    def _is_class_constructor_without_new(self, expression: Node) -> bool:
+        if not isinstance(expression, Identifier):
+            return False
+        return expression.name in self.class_names
+
+    def _collect_class_names(self) -> set[str]:
+        names: set[str] = set()
+        for index, token in enumerate(self.tokens[:-1]):
+            if token.type is TokenType.CLASS and self.tokens[index + 1].type is TokenType.IDENTIFIER:
+                names.add(self.tokens[index + 1].lexeme)
+        return names
+
     def _match(self, *types: TokenType) -> bool:
         for token_type in types:
             if self._check(token_type):
@@ -645,6 +706,23 @@ class Parser:
         if self.current + 1 >= len(self.tokens):
             return False
         return self.tokens[self.current + 1].type is token_type
+
+    def _looks_like_global_declaration_without_keyword(self) -> bool:
+        return self._check(TokenType.IDENTIFIER) and self._check_next(TokenType.IDENTIFIER)
+
+    def _looks_like_unknown_global_assignment(self) -> bool:
+        if not self._check(TokenType.IDENTIFIER):
+            return False
+        if self.current + 1 >= len(self.tokens):
+            return False
+        if self.tokens[self.current + 1].type not in ASSIGNMENT_TOKENS:
+            return False
+        name = self._peek().lexeme
+        return not any(symbol.name == name and symbol.scope == "global" for symbol in self.symbols)
+
+    def _check_reserved_word(self) -> bool:
+        token = self._peek()
+        return token.type not in {TokenType.IDENTIFIER, TokenType.EOF} and token.lexeme.isalpha()
 
     def _advance(self) -> Token:
         if not self._is_at_end():

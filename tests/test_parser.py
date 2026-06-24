@@ -7,6 +7,7 @@ from jss_compiler.ast_nodes import (
     BinaryOperation,
     Call,
     ClassDeclaration,
+    ForStatement,
     FunctionDeclaration,
     IfStatement,
     VarDeclaration,
@@ -111,6 +112,22 @@ function void main() {
     assert power_statement.value.right.operator.lexeme == "**"
 
 
+def test_for_aceita_declaracao_let_no_inicializador() -> None:
+    ast = parse(
+        """
+function void main() {
+    for (let int i = 0; i < 5; i = i + 1) {
+        console.log(i);
+    }
+}
+"""
+    )
+
+    statement = ast.declarations[0].body.statements[0]
+    assert isinstance(statement, ForStatement)
+    assert isinstance(statement.initializer, VarDeclaration)
+
+
 def test_casts_e_chamadas_nativas_sao_marcadas_na_ast() -> None:
     ast = parse(
         """
@@ -145,11 +162,65 @@ def test_rejeita_ponto_e_virgula_ausente() -> None:
         parse("let int x")
 
 
+def test_rejeita_matriz_multidimensional_com_tamanho_no_tipo_e_declarador() -> None:
+    with pytest.raises(SyntaxErrorJSS, match="matriz multidimensional nao permitida"):
+        parse("let int [2] m[3];")
+
+
+def test_rejeita_criacao_de_objeto_sem_new() -> None:
+    source = """class Ponto {
+  int x;
+  Ponto constructor(int x) {
+    this.x = x;
+  }
+}
+
+let Ponto p1 = Ponto(10);"""
+
+    with pytest.raises(SyntaxErrorJSS) as exception:
+        parse(source)
+
+    assert str(exception.value) == "Erro sintatico na linha 8: criação de objeto deve usar 'new'."
+
+
 def test_erro_parametros_informa_parentese_ausente_antes_do_bloco() -> None:
     with pytest.raises(SyntaxErrorJSS) as exception:
         parse("function void main( {")
 
     assert str(exception.value) == "Erro sintático na linha 1, coluna 21: esperado tipo ) antes de {"
+
+
+def test_erro_palavra_reservada_como_nome_de_variavel_e_claro() -> None:
+    with pytest.raises(
+        SyntaxErrorJSS,
+        match="nome de variavel invalido: 'while' e palavra reservada",
+    ):
+        parse("let int while;")
+
+
+def test_erro_var_global_sem_let_const_function_class_e_claro() -> None:
+    with pytest.raises(SyntaxErrorJSS) as exception:
+        parse("var idade = 20;")
+
+    assert str(exception.value) == (
+        "Erro sintático na linha 1: declaração inválida. Esperado 'let', "
+        "'const', 'function' ou 'class', mas encontrado 'var'."
+    )
+
+
+def test_erro_function_sem_tipo_de_retorno_e_claro() -> None:
+    with pytest.raises(SyntaxErrorJSS, match="function sem tipo de retorno"):
+        parse("function soma(int a, int b) { return a + b; }")
+
+
+def test_erro_atribuicao_global_sem_declaracao_previa_e_claro() -> None:
+    with pytest.raises(SyntaxErrorJSS) as exception:
+        parse("idade = 20;")
+
+    assert str(exception.value) == (
+        "Erro sintático na linha 1: declaração inválida. Esperado 'let', "
+        "'const', 'function' ou 'class', mas encontrado 'idade'."
+    )
 
 
 def test_erro_no_fim_do_arquivo_usa_linha_do_ultimo_token_real() -> None:

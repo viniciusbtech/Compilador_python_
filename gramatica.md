@@ -66,7 +66,11 @@ comando_if ::= "if" "(" expressao ")" bloco ("else" (bloco | comando_if))?
 
 comando_while ::= "while" "(" expressao ")" bloco
 
-comando_for ::= "for" "(" expressao? ";" expressao? ";" expressao? ")" bloco
+comando_for ::= "for" "(" inicializador_for expressao? ";" expressao? ")" bloco
+
+inicializador_for ::= declaracao_variavel
+                    | declaracao_constante
+                    | expressao? ";"
 
 comando_return ::= "return" expressao? ";"
 
