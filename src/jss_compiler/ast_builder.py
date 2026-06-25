@@ -50,6 +50,8 @@ _ANTLR_TO_JSS: dict[int, TokenType] = {
     JSSLexer.SLASH_ASSIGN:    TokenType.SLASH_ASSIGN,
     JSSLexer.PERCENT_ASSIGN:  TokenType.PERCENT_ASSIGN,
     JSSLexer.POWER_ASSIGN:    TokenType.POWER_ASSIGN,
+    JSSLexer.AND_AND_ASSIGN:  TokenType.AND_AND_ASSIGN,
+    JSSLexer.OR_OR_ASSIGN:    TokenType.OR_OR_ASSIGN,
     JSSLexer.PLUS:            TokenType.PLUS,
     JSSLexer.MINUS:           TokenType.MINUS,
     JSSLexer.STAR:            TokenType.STAR,
@@ -231,8 +233,15 @@ class ASTBuilder(JSSVisitor):
             return self.visitConstructorDecl(ctx.constructorDecl())
         if ctx.parameters():  # método: returnType IDENTIFIER parameters block
             return self._build_method(ctx)
-        # atributo: type_ IDENTIFIER SEMICOLON
+        # atributo: type_ arrayTypeDim? IDENTIFIER SEMICOLON
         type_node = self.visitType_(ctx.type_())
+        if ctx.arrayTypeDim():
+            dim = ctx.arrayTypeDim()
+            exprs = dim.expr()
+            type_node.is_array = True
+            type_node.array_size = self.visit(exprs[0])
+            if len(exprs) > 1:
+                type_node.array_size2 = self.visit(exprs[1])
         name_sym = ctx.IDENTIFIER().symbol
         return AttributeDeclaration(
             line=type_node.line, column=type_node.column,

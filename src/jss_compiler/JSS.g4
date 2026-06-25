@@ -17,11 +17,9 @@ program
     ;
 
 declaration
-    : varDecl
-    | constDecl
-    | functionDecl
+    : functionDecl
     | classDecl
-    | exprStmt
+    | statement
     ;
 
 // ── Declarações de variáveis ─────────────────────────────────────────────
@@ -80,7 +78,7 @@ classDecl
 classMember
     : constructorDecl
     | returnType IDENTIFIER parameters block   // método
-    | type_ IDENTIFIER SEMICOLON              // atributo
+    | type_ arrayTypeDim? IDENTIFIER SEMICOLON // atributo (scalar ou array/matriz)
     ;
 
 constructorDecl
@@ -154,6 +152,8 @@ assignOp
     | SLASH_ASSIGN
     | PERCENT_ASSIGN
     | POWER_ASSIGN
+    | AND_AND_ASSIGN
+    | OR_OR_ASSIGN
     ;
 
 logicalOr
@@ -273,6 +273,8 @@ IDENTIFIER
 
 // Operadores — da combinação mais longa para a mais curta
 POWER_ASSIGN    : '**=' ;
+AND_AND_ASSIGN  : '&&=' ;
+OR_OR_ASSIGN    : '||=' ;
 POWER           : '**' ;
 EQUAL_EQUAL     : '==' ;
 BANG_EQUAL      : '!=' ;

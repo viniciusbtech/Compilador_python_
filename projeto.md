@@ -163,9 +163,17 @@ Gerados em `semantic.py` após a AST ser construída com sucesso.
 | Classe sem atributos | `class A { A constructor() {} }` |
 | Classe sem construtor | `class A { int x; }` |
 
+## INput e Console.log()
+sao palavras reservadas.'
 
 #AINDA VAI SER IMPLEMENTADO
 V. Curto-circuito (&&, ||) — NÃO implementado ❌
 O analisador semântico apenas verifica o tipo dos dois operandos de && e ||, sem nenhuma lógica de avaliação em tempo de execução:
 
 Curto-circuito é um comportamento de execução — o segundo operando não é avaliado em runtime. Como o compilador só tem front-end (sem interpretador ou gerador de código), essa regra não pode ser implementada ainda. Ela só existirá quando houver geração de código intermediário (ex: salto condicional no bytecode).
+
+
+!!DIVERGENCIA 
+1. || — a tabela diz "tipos aplicados: todos", mas o código exige bool nos dois lados. Provavelmente a tabela está errada aqui, já que || sendo lógico faz mais sentido exigir bool.
+2. == != — a tabela diz "tipos aplicados: booleano", mas o código aceita int==int, str==str, etc. Provavelmente a tabela quis dizer que o retorno é bool, não que só aceita bool como entrada.
+3. = — tabela diz "tipos aplicados: booleano", claramente um erro de formatação — atribuição funciona para todos os tipos.

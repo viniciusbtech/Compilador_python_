@@ -55,6 +55,8 @@ ASSIGNMENT_TOKENS = {
     TokenType.SLASH_ASSIGN,
     TokenType.PERCENT_ASSIGN,
     TokenType.POWER_ASSIGN,
+    TokenType.AND_AND_ASSIGN,
+    TokenType.OR_OR_ASSIGN,
 }
 
 SYNCHRONIZATION_TOKENS = {

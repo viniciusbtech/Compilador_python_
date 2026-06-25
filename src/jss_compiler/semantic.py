@@ -157,8 +157,8 @@ class SemanticAnalyzer:
             self._check_function(declaration)
         elif isinstance(declaration, ClassDeclaration):
             self._check_class(declaration)
-        elif isinstance(declaration, ExpressionStatement):
-            self._expression_type(declaration.expression)
+        else:
+            self._check_statement(declaration)
 
     def _check_function(self, declaration: FunctionDeclaration | MethodDeclaration) -> None:
         previous_function = self.current_function
@@ -178,6 +178,13 @@ class SemanticAnalyzer:
                 )
             )
         self._check_block(declaration.body, create_scope=False)
+        return_type = self._type_from_node(declaration.return_type)
+        if return_type.name != "void" and not self._block_always_returns(declaration.body):
+            raise SemanticError(
+                f"funcao '{declaration.name}' nao garante retorno em todos os caminhos",
+                declaration.line,
+                declaration.column,
+            )
         self.current_scope = previous_scope
         self.current_function = previous_function
 
@@ -610,6 +617,13 @@ class SemanticAnalyzer:
             self._require_assignable(target_type, value_type, expression.value)
             return target_type
 
+        if operator in {TokenType.AND_AND_ASSIGN, TokenType.OR_OR_ASSIGN}:
+            if target_type.name != "bool":
+                raise SemanticError("&&= e ||= requerem alvo do tipo bool", expression.line, expression.column)
+            if value_type.name != "bool":
+                raise SemanticError("&&= e ||= requerem valor do tipo bool", expression.line, expression.column)
+            return TypeInfo("bool")
+
         fake_operator = {
             TokenType.PLUS_ASSIGN: TokenType.PLUS,
             TokenType.MINUS_ASSIGN: TokenType.MINUS,
@@ -716,6 +730,22 @@ class SemanticAnalyzer:
                 node.column,
             )
 
+    def _block_always_returns(self, block: Block) -> bool:
+        for stmt in block.statements:
+            if isinstance(stmt, ReturnStatement):
+                return True
+            if isinstance(stmt, Block) and self._block_always_returns(stmt):
+                return True
+            if isinstance(stmt, IfStatement) and stmt.else_branch is not None:
+                then_ok = self._block_always_returns(stmt.then_branch)
+                if isinstance(stmt.else_branch, Block):
+                    else_ok = self._block_always_returns(stmt.else_branch)
+                else:
+                    else_ok = self._block_always_returns(Block(stmt.else_branch.line, stmt.else_branch.column, [stmt.else_branch]))
+                if then_ok and else_ok:
+                    return True
+        return False
+
     def _require_assignable(self, target: TypeInfo, value: TypeInfo, value_node: Node) -> None:
         if target.is_array != value.is_array:
             raise SemanticError(
@@ -726,6 +756,8 @@ class SemanticAnalyzer:
         if target.name == value.name:
             return
         if value.name == "null" and target.name not in PRIMITIVE_TYPES:
+            return
+        if target.name == "real" and value.name == "int" and not target.is_array and not value.is_array:
             return
         raise SemanticError(
             f"tipo incompativel: esperado {target.display()}, recebido {value.display()}",

@@ -1,4 +1,4 @@
-# Generated from JSS.g4 by ANTLR 4.13.2
+# Generated from src/jss_compiler/JSS.g4 by ANTLR 4.13.2
 from antlr4 import *
 if "." in __name__:
     from .JSSParser import JSSParser

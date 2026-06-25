@@ -1,25 +1,60 @@
-function int fatorial (int fat) {
-if (fat > 1) {
-console.log(fat);
-return fat * fatorial (fat - 1);
-} else {
-return 1;
-}
-}
-function void printMedia (int v1 , int v2) {
-const real x = media (v1 ,v2);
-console.log (" Resultado : ", x);
-}
-function real media ( float n1 , float n2) {
-return (n1 + n2)/2;
-}
-function void main( ) { // facultativo a declaração de uma função main
-let int numero ;
-let int n1 , n2;
-console.log (" Programa Fatorial. Digite o valor: ");
-input( numero );
-console.log ( fatorial ( numero ));
-console.log (" Programa Media . Digite os valores: ");
-input(n1 , n2);
-console.log ( console.log(Media (n1 , n2));
-}
+// Testes de tipos basicos: variaveis, constantes, arrays
+
+// === VARIAVEIS ===
+let int x = 10;
+let real y = 3.14;
+let str nome = "Joao";
+let bool ativo = true;
+
+console.log("Int:", x);
+console.log("Real:", y);
+console.log("String:", nome);
+console.log("Bool:", ativo);
+
+// Multiplas declaracoes
+let int a, b, c;
+a = 5;
+b = 10;
+c = a + b;
+console.log("Soma:", c);
+
+// === CONSTANTES ===
+const int MAX = 100;
+const real PI = 3.14159;
+const str MSG = "Constante";
+console.log("Constantes:", MAX, PI, MSG);
+
+// === ARRAYS 1D ===
+let int[5] numeros;
+numeros[0] = 10;
+numeros[1] = 20;
+numeros[2] = 30;
+numeros[3] = 40;
+numeros[4] = 50;
+
+console.log("Array[0]:", numeros[0]);
+console.log("Array[4]:", numeros[4]);
+
+// === ARRAYS 2D ===
+let int[3][3] matriz;
+matriz[0][0] = 1;
+matriz[0][1] = 2;
+matriz[0][2] = 3;
+matriz[1][0] = 4;
+matriz[1][1] = 5;
+matriz[1][2] = 6;
+matriz[2][0] = 7;
+matriz[2][1] = 8;
+matriz[2][2] = 9;
+
+console.log("Matriz[1][1]:", matriz[1][1]);
+
+// Atribuicao composta em arrays
+let int[3] arr;
+arr[0] = 10;
+arr[0] += 5;   // 15
+console.log("Array com +=:", arr[0]);
+
+arr[1] = 20;
+arr[1] *= 2;   // 40
+console.log("Array com *=:", arr[1]);
