@@ -1,1 +1,1 @@
-# O projeto ainda não depende de bibliotecas externas.
+antlr4-python3-runtime>=4.13

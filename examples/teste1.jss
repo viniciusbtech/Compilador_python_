@@ -1,10 +1,25 @@
-let int[3][3] matriz;
-matriz[0][0] = 1;
-matriz[0][1] = 2;
-matriz[0][2] = 3;
-matriz[1][0] = 4;
-matriz[1][1] = 5;
-matriz[1][2] = 6;
-matriz[2][0] = 7;
-matriz[2][1] = 8;
-matriz[2][2] = 9;
+function int fatorial (int fat) {
+if (fat > 1) {
+console.log(fat);
+return fat * fatorial (fat - 1);
+} else {
+return 1;
+}
+}
+function void printMedia (int v1 , int v2) {
+const real x = media (v1 ,v2);
+console.log (" Resultado : ", x);
+}
+function real media ( float n1 , float n2) {
+return (n1 + n2)/2;
+}
+function void main( ) { // facultativo a declaração de uma função main
+let int numero ;
+let int n1 , n2;
+console.log (" Programa Fatorial. Digite o valor: ");
+input( numero );
+console.log ( fatorial ( numero ));
+console.log (" Programa Media . Digite os valores: ");
+input(n1 , n2);
+console.log ( console.log(Media (n1 , n2));
+}

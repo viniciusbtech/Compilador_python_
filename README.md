@@ -6,10 +6,12 @@ O front-end atual executa:
 
 ```text
 arquivo .jss
-   -> lexer
+   -> lexer manual (lexer.py)
    -> tokens com linha/coluna
-   -> parser
-   -> AST + tabela de simbolos inicial
+   -> parser ANTLR4 (gerado de JSS.g4)
+   -> AST + tabela de simbolos
+   -> analisador semantico
+   -> programa validado
 ```
 
 ## Estrutura do projeto
@@ -20,13 +22,19 @@ jss-compiler/
 |-- examples/
 |-- src/
 |   `-- jss_compiler/
-|       |-- lexer.py
-|       |-- parser.py
+|       |-- lexer.py            # lexer manual
+|       |-- tokens.py
+|       |-- parser.py           # parser manual (usado apenas no debug_parser)
 |       |-- ast_nodes.py
+|       |-- ast_builder.py      # converte arvore ANTLR -> ast_nodes
+|       |-- jss_token_source.py # ponte lexer JSS -> ANTLR
+|       |-- antlr_error_listener.py
+|       |-- JSS.g4              # gramatica formal ANTLR4
+|       |-- antlr_generated/    # codigo gerado pelo ANTLR (nao editar)
+|       |-- semantic.py         # analisador semantico
+|       |-- frontend.py         # orquestra todas as etapas
 |       |-- debug_lexer.py
 |       |-- debug_parser.py
-|       |-- frontend.py
-|       |-- tokens.py
 |       `-- errors.py
 `-- tests/
 ```
@@ -38,6 +46,7 @@ No Windows PowerShell:
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 python -m pip install -e .
 pip install -r requirements-dev.txt
 ```
@@ -280,17 +289,18 @@ Erro lexico:
 Get-Content .\examples\erro_lexico.jss -Raw | python .\main.py
 ```
 
-Erro sintatico:
+Erro semantico (redeclaracao de variavel):
 
 ```powershell
 Get-Content .\examples\erro_sintatico.jss -Raw | python .\main.py
-
-Get-Content .\examples\testes_jss_parser\aprovados\01_variaveis_constantes.jss -Raw | python .\main.py
 ```
 
-TABELA DE SIMBOLOS:
-Get-Content .\examples\sucesso_minimo.jss -Raw | .\.venv\Scripts\python.exe -m jss_compiler.debug_parser
-Get-Content caminhodocodigo -Raw | .\.venv\Scripts\python.exe -m jss_compiler.debug_parser
+Tabela de simbolos (AST em JSON):
+
+```powershell
+Get-Content .\examples\sucesso_minimo.jss -Raw | python -m jss_compiler.debug_parser
+Get-Content .\examples\teste1.jss -Raw | python -m jss_compiler.debug_parser
+```
 
 ## Atualizacao: analise semantica
 
@@ -363,9 +373,4 @@ jss-compiler/
 
 ## Proximas etapas
 
-1. Implementar analise semantica usando `Program.symbols` e a AST.
-2. Validar redeclaracao no mesmo escopo.
-3. Validar `main` sem parametros quando existir.
-4. Validar tipos de atribuicao, operadores, retorno e chamadas.
-5. Validar `break` apenas dentro de `while` ou `for`.
-6. Gerar codigo intermediario LLVM IR ou JASMIN percorrendo a AST.
+1. Gerar codigo intermediario (LLVM IR ou JASMIN) percorrendo a AST.

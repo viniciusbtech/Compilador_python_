@@ -3,6 +3,7 @@ name = "jss-compiler"
 version = "0.1.0"
 description = "Compilador acadêmico para Java Script Simplificado (JSS)"
 requires-python = ">=3.11"
+dependencies = ["antlr4-python3-runtime>=4.13"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

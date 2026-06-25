@@ -72,7 +72,7 @@ CASOS_DE_ERRO = [
     ),
     pytest.param(
         "function void main() {\n    int let x = 10;\n}",
-        "Erro de Sintaxe: Esperava ';' ou um identificador após 'int', mas encontrou 'let'.",
+        "Erro sintático na linha 2, coluna 9: token inesperado 'let'",
         id="let-apos-tipo-primitivo",
     ),
 ]
