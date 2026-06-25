@@ -27,8 +27,7 @@ foreach ($File in $ExampleFiles) {
     Write-Host "`n----------------------------------------" -ForegroundColor DarkGray
     Write-Host "Arquivo: $($File.Name)" -ForegroundColor White
 
-    $Source = Get-Content -LiteralPath $File.FullName -Raw
-    $Output = $Source | python .\main.py 2>&1
+    $Output = python .\main.py $File.FullName 2>&1
 
     if ($Output) {
         $Output | ForEach-Object { Write-Host $_ }

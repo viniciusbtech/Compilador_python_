@@ -1,21 +1,7 @@
-class Aluno {
-  str nome;
-  real media;
-  bool aprovado;
-
-  Aluno constructor(str nome, real media, bool aprovado) {
-    this.nome = nome;
-    this.media = media;
-    this.aprovado = aprovado;
-  }
-
-  str getNome() {
-    return this.nome;
-  }
+function real calcularMedia(int a, int b, int c) {
+    let int soma = a + b + c;
+    return real(soma) / 3.0;
 }
 
-let Aluno aluno = new Aluno("Ana", 8.5, true);
 
-function void main() {
-  console.log(aluno.getNome());
-}
+calcularMedia(2.0, 3.0);

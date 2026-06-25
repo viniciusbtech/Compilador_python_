@@ -62,11 +62,18 @@ $env:PYTHONPATH = "$PWD\src"
 O compilador recebe o caminho do arquivo `.jss` como argumento:
 
 ```powershell
-python .\main.py .\examples\sucesso_minimo.jss
-python .\main.py .\examples\erro_sintatico.jss
-python .\main.py .\examples\erro_lexico.jss
+python .\main.py .\examples\teste1.jss
+```
 
-#Testes
+Para executar qualquer arquivo da pasta `examples`:
+
+```powershell
+python .\main.py .\examples\nome_do_arquivo.jss
+```
+
+Testes disponíveis (1 a 10):
+
+```powershell
 python .\main.py .\examples\teste1.jss
 python .\main.py .\examples\teste2.jss
 python .\main.py .\examples\teste3.jss
@@ -74,9 +81,19 @@ python .\main.py .\examples\teste4.jss
 python .\main.py .\examples\teste5.jss
 python .\main.py .\examples\teste6.jss
 python .\main.py .\examples\teste7.jss
+python .\main.py .\examples\teste8.jss
+python .\main.py .\examples\teste9.jss
+python .\main.py .\examples\teste10.jss
+```
 
-#Testes automatizado
+Para rodar todos os testes automaticamente:
+
+```powershell
 powershell -ExecutionPolicy Bypass -File .\testar_tudo.ps1
+powershell -ExecutionPolicy Bypass -File .\teste_1_10.ps1
+powershell -ExecutionPolicy Bypass -File .\executar_run.ps1
+esse ultimo script roda todos os arquivos .jss que estao em run
+O script roda todos os arquivos .jss que estiverem lá, em ordem alfabética, e imprime a saída de cada um.
 ```
 
 Saida esperada para um programa lexica e sintaticamente valido:
@@ -85,16 +102,10 @@ Saida esperada para um programa lexica e sintaticamente valido:
 Programa válido.
 ```
 
-Para testar outro arquivo:
-
-```powershell
-python .\main.py .\examples\nome_do_arquivo.jss
-```
-
 ## Como ver os tokens do lexer
 
 ```powershell
-python -m jss_compiler.debug_lexer .\examples\sucesso_minimo.jss
+python -m jss_compiler.debug_lexer .\examples\teste1.jss
 ```
 
 A saida mostra localizacao, tipo do token e lexema:
@@ -112,7 +123,7 @@ LOCAL      TOKEN                  LEXEMA
 Use o utilitario `debug_parser` para imprimir a AST em JSON:
 
 ```powershell
-python -m jss_compiler.debug_parser .\examples\sucesso_minimo.jss
+python -m jss_compiler.debug_parser .\examples\teste1.jss
 ```
 
 Esse comando permite conferir se o parser respeitou precedencia, associatividade, blocos, chamadas nativas, vetores, classes e declaracoes.
@@ -278,29 +289,21 @@ python -m pytest tests\test_lexer.py tests\test_lexer_bateria.py -v
 
 ## Arquivos uteis para teste manual
 
-Programa valido minimo:
+Compilar um arquivo:
 
 ```powershell
-python .\main.py .\examples\sucesso_minimo.jss
-python -m jss_compiler.debug_parser .\examples\sucesso_minimo.jss
+python .\main.py .\examples\teste1.jss
 ```
 
-Erro lexico:
+Inspecionar tokens do lexer:
 
 ```powershell
-python .\main.py .\examples\erro_lexico.jss
-```
-
-Erro semantico (redeclaracao de variavel):
-
-```powershell
-python .\main.py .\examples\erro_sintatico.jss
+python -m jss_compiler.debug_lexer .\examples\teste1.jss
 ```
 
 Tabela de simbolos (AST em JSON):
 
 ```powershell
-python -m jss_compiler.debug_parser .\examples\sucesso_minimo.jss
 python -m jss_compiler.debug_parser .\examples\teste1.jss
 ```
 
@@ -376,3 +379,5 @@ jss-compiler/
 ## Proximas etapas
 
 1. Gerar codigo intermediario (LLVM IR ou JASMIN) percorrendo a AST.
+
+

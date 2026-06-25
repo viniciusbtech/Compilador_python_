@@ -1,4 +1,0 @@
-function void main() {
-    let int x = 1;
-    const real x = 2.0;
-}
