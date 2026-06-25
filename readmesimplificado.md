@@ -18,11 +18,14 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-## Como executar
+## Como  
 
 **Windows:**
 ```powershell
 python .\main.py .\examples\teste1.jss
+
+So precisa colocar o arquivo no example e mudar.
+python .\main.py .\examples\<arquivo>.jss
 ```
 
 **Linux / macOS:**
