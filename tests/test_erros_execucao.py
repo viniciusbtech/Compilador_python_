@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -88,16 +89,24 @@ def executar_compilador(codigo_fonte: str) -> subprocess.CompletedProcess[str]:
     )
     ambiente["PYTHONUTF8"] = "1"
 
-    return subprocess.run(
-        [sys.executable, str(MAIN_FILE)],
-        input=codigo_fonte,
-        text=True,
-        encoding="utf-8",
-        capture_output=True,
-        cwd=ROOT,
-        env=ambiente,
-        check=False,
-    )
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".jss", encoding="utf-8", delete=False
+    ) as tmp:
+        tmp.write(codigo_fonte)
+        tmp_path = tmp.name
+
+    try:
+        return subprocess.run(
+            [sys.executable, str(MAIN_FILE), tmp_path],
+            text=True,
+            encoding="utf-8",
+            capture_output=True,
+            cwd=ROOT,
+            env=ambiente,
+            check=False,
+        )
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
 
 
 @pytest.mark.parametrize(("codigo_fonte", "erro_esperado"), CASOS_DE_ERRO)
@@ -116,5 +125,5 @@ def test_entrada_vazia_deve_retornar_erro() -> None:
     resultado = executar_compilador("")
 
     assert resultado.returncode == 1
-    assert resultado.stdout.strip() == "Erro: nenhum programa JSS foi fornecido na entrada padrão."
+    assert "está vazio" in resultado.stdout
     assert resultado.stderr == ""

@@ -504,6 +504,13 @@ class SemanticAnalyzer:
 
         raise SemanticError("chamada requer funcao ou metodo", expression.line, expression.column)
 
+    _CAST_ALLOWED_SOURCES: dict[str, frozenset[str]] = {
+        "int":  frozenset({"int", "real", "bool"}),
+        "real": frozenset({"int", "real", "bool"}),
+        "bool": frozenset({"bool", "int", "real"}),
+        "str":  frozenset({"str", "int", "real", "bool"}),
+    }
+
     def _native_call_type(self, expression: Call) -> TypeInfo:
         if isinstance(expression.callee, Identifier) and expression.callee.name in CAST_FUNCTIONS:
             if len(expression.arguments) != 1:
@@ -515,7 +522,15 @@ class SemanticAnalyzer:
             source_type = self._expression_type(expression.arguments[0])
             if source_type.is_array or source_type.name == "void":
                 raise SemanticError("cast nativo nao aceita vetor ou void", expression.line, expression.column)
-            return TypeInfo(expression.callee.name)
+            target_name = expression.callee.name
+            allowed = self._CAST_ALLOWED_SOURCES[target_name]
+            if source_type.name not in allowed:
+                raise SemanticError(
+                    f"cast {target_name}() nao aceita origem {source_type.name}",
+                    expression.line,
+                    expression.column,
+                )
+            return TypeInfo(target_name)
 
         if isinstance(expression.callee, Identifier) and expression.callee.name == "input":
             if not expression.arguments:
@@ -572,8 +587,11 @@ class SemanticAnalyzer:
             if left.is_array or right.is_array:
                 raise SemanticError("operador + nao aceita vetores", expression.line, expression.column)
             if left.name == "str" or right.name == "str":
-                if left.name not in PRIMITIVE_TYPES or right.name not in PRIMITIVE_TYPES:
-                    raise SemanticError("concatenacao requer tipos simples", expression.line, expression.column)
+                if left.name != "str" or right.name != "str":
+                    raise SemanticError(
+                        f"concatenacao requer operandos str, recebido {left.name} e {right.name}",
+                        expression.line, expression.column,
+                    )
                 return TypeInfo("str")
             self._require_numeric(left, expression.left)
             self._require_numeric(right, expression.right)
@@ -646,8 +664,11 @@ class SemanticAnalyzer:
         if operator is TokenType.PLUS and (target_type.name == "str" or value_type.name == "str"):
             if target_type.is_array or value_type.is_array:
                 raise SemanticError("atribuicao composta nao aceita vetores", expression.line, expression.column)
-            if target_type.name not in PRIMITIVE_TYPES or value_type.name not in PRIMITIVE_TYPES:
-                raise SemanticError("concatenacao requer tipos simples", expression.line, expression.column)
+            if target_type.name != "str" or value_type.name != "str":
+                raise SemanticError(
+                    f"concatenacao requer operandos str, recebido {target_type.name} e {value_type.name}",
+                    expression.line, expression.column,
+                )
             return TypeInfo("str")
 
         if operator in {TokenType.PERCENT, TokenType.POWER}:

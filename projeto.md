@@ -7,7 +7,6 @@ Compilador da linguagem **JSS (Java Script Simplificado)** implementado em Pytho
 ```
 código-fonte → Lexer → JSSTokenSource → ANTLR Parser → ASTBuilder → SemanticAnalyzer
 ```
-Lexer (manual) → JSSTokenSource → JSSParser (ANTLR) → ASTBuilder → SemanticAnalyzer
 
 1. `Lexer.tokenize()` — gera lista de `Token`
 2. `JSSTokenSource` — adapta tokens JSS para o stream ANTLR4

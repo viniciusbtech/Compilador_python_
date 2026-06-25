@@ -59,19 +59,21 @@ $env:PYTHONPATH = "$PWD\src"
 
 ## Como executar o compilador
 
-O compilador le o programa JSS pela entrada padrao:
+O compilador recebe o caminho do arquivo `.jss` como argumento:
 
 ```powershell
-Get-Content .\examples\sucesso_minimo.jss -Raw | python .\main.py
-Get-Content .\examples\erro_sintatico.jss -Raw | python .\main.py
-Get-Content .\examples\erro_lexico.jss -Raw | python .\main.py
+python .\main.py .\examples\sucesso_minimo.jss
+python .\main.py .\examples\erro_sintatico.jss
+python .\main.py .\examples\erro_lexico.jss
 
 #Testes
-Get-Content .\examples\teste1.jss -Raw | python .\main.py
-Get-Content .\examples\teste2.jss -Raw | python .\main.py
-Get-Content .\examples\teste3.jss -Raw | python .\main.py
-Get-Content .\examples\teste4.jss -Raw | python .\main.py
-Get-Content .\examples\teste5.jss -Raw | python .\main.py
+python .\main.py .\examples\teste1.jss
+python .\main.py .\examples\teste2.jss
+python .\main.py .\examples\teste3.jss
+python .\main.py .\examples\teste4.jss
+python .\main.py .\examples\teste5.jss
+python .\main.py .\examples\teste6.jss
+python .\main.py .\examples\teste7.jss
 
 #Testes automatizado
 powershell -ExecutionPolicy Bypass -File .\testar_tudo.ps1
@@ -86,13 +88,13 @@ Programa válido.
 Para testar outro arquivo:
 
 ```powershell
-Get-Content .\examples\nome_do_arquivo.jss -Raw | python .\main.py
+python .\main.py .\examples\nome_do_arquivo.jss
 ```
 
 ## Como ver os tokens do lexer
 
 ```powershell
-Get-Content .\examples\sucesso_minimo.jss -Raw | python -m jss_compiler.debug_lexer
+python -m jss_compiler.debug_lexer .\examples\sucesso_minimo.jss
 ```
 
 A saida mostra localizacao, tipo do token e lexema:
@@ -110,7 +112,7 @@ LOCAL      TOKEN                  LEXEMA
 Use o utilitario `debug_parser` para imprimir a AST em JSON:
 
 ```powershell
-Get-Content .\examples\sucesso_minimo.jss -Raw | python -m jss_compiler.debug_parser
+python -m jss_compiler.debug_parser .\examples\sucesso_minimo.jss
 ```
 
 Esse comando permite conferir se o parser respeitou precedencia, associatividade, blocos, chamadas nativas, vetores, classes e declaracoes.
@@ -279,27 +281,27 @@ python -m pytest tests\test_lexer.py tests\test_lexer_bateria.py -v
 Programa valido minimo:
 
 ```powershell
-Get-Content .\examples\sucesso_minimo.jss -Raw | python .\main.py
-Get-Content .\examples\sucesso_minimo.jss -Raw | python -m jss_compiler.debug_parser
+python .\main.py .\examples\sucesso_minimo.jss
+python -m jss_compiler.debug_parser .\examples\sucesso_minimo.jss
 ```
 
 Erro lexico:
 
 ```powershell
-Get-Content .\examples\erro_lexico.jss -Raw | python .\main.py
+python .\main.py .\examples\erro_lexico.jss
 ```
 
 Erro semantico (redeclaracao de variavel):
 
 ```powershell
-Get-Content .\examples\erro_sintatico.jss -Raw | python .\main.py
+python .\main.py .\examples\erro_sintatico.jss
 ```
 
 Tabela de simbolos (AST em JSON):
 
 ```powershell
-Get-Content .\examples\sucesso_minimo.jss -Raw | python -m jss_compiler.debug_parser
-Get-Content .\examples\teste1.jss -Raw | python -m jss_compiler.debug_parser
+python -m jss_compiler.debug_parser .\examples\sucesso_minimo.jss
+python -m jss_compiler.debug_parser .\examples\teste1.jss
 ```
 
 ## Atualizacao: analise semantica
