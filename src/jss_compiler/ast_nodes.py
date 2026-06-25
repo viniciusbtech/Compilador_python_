@@ -153,6 +153,7 @@ class BinaryOperation(Node):
 class UnaryOperation(Node):
     operator: Token
     operand: Node
+    postfix: bool = False
 
 
 @dataclass(slots=True)

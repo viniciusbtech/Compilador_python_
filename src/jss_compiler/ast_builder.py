@@ -196,7 +196,15 @@ class ASTBuilder(JSSVisitor):
         if ctx.VOID():
             sym = ctx.VOID().symbol
             return TypeNode(line=sym.line, column=sym.column + 1, name="void")
-        return self.visitType_(ctx.type_())
+        type_node = self.visitType_(ctx.type_())
+        if ctx.arrayTypeDim():
+            dim = ctx.arrayTypeDim()
+            exprs = dim.expr()
+            type_node.is_array = True
+            type_node.array_size = self.visit(exprs[0])
+            if len(exprs) > 1:
+                type_node.array_size2 = self.visit(exprs[1])
+        return type_node
 
     # ── Funções ───────────────────────────────────────────────────────────────
 
@@ -216,6 +224,13 @@ class ASTBuilder(JSSVisitor):
 
     def visitParameter(self, ctx: JSSParser.ParameterContext) -> Parameter:
         type_node = self.visitType_(ctx.type_())
+        if ctx.arrayTypeDim():
+            dim = ctx.arrayTypeDim()
+            exprs = dim.expr()
+            type_node.is_array = True
+            type_node.array_size = self.visit(exprs[0])
+            if len(exprs) > 1:
+                type_node.array_size2 = self.visit(exprs[1])
         name_sym = ctx.IDENTIFIER().symbol
         return Parameter(line=type_node.line, column=type_node.column,
                          type_node=type_node, name=name_sym.text)
@@ -426,6 +441,11 @@ class ASTBuilder(JSSVisitor):
                 index = self.visit(op.expr())
                 node = IndexAccess(line=node.line, column=node.column,
                                    collection=node, index=index)
+            elif op.PLUS_PLUS() or op.MINUS_MINUS():  # pós-incremento / pós-decremento
+                op_term = op.getChild(0)
+                op_tok = _make_jss_token(op_term, _ANTLR_TO_JSS[op_term.symbol.type])
+                node = UnaryOperation(line=node.line, column=node.column,
+                                      operator=op_tok, operand=node, postfix=True)
             else:  # DOT IDENTIFIER — acesso a atributo
                 attr_sym = op.IDENTIFIER().symbol
                 node = AttributeAccess(line=node.line, column=node.column,

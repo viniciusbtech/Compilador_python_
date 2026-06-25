@@ -53,11 +53,11 @@ parameters
     ;
 
 parameter
-    : type_ IDENTIFIER
+    : type_ arrayTypeDim? IDENTIFIER
     ;
 
 returnType
-    : type_
+    : type_ arrayTypeDim?
     | VOID
     ;
 
@@ -193,6 +193,8 @@ postfixOp
     : LEFT_PAREN argumentList? RIGHT_PAREN   // chamada de função/método
     | LEFT_BRACKET expr RIGHT_BRACKET        // acesso por índice
     | DOT IDENTIFIER                         // acesso a atributo
+    | PLUS_PLUS                              // pós-incremento
+    | MINUS_MINUS                            // pós-decremento
     ;
 
 argumentList
