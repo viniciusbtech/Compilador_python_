@@ -1,6 +1,9 @@
-let bool t = true;
-let bool f = false;
+console.log("Ola", " ", "Mundo", "!");
 
-console.log("AND:", t && f);           // false
-console.log("OR:", t || f);            // true
-console.log("NOT:", !t);               // false
+let int x = 10;
+let int y = 20;
+console.log("x =", x, ", y =", y);
+
+let str nome = "Joao";
+let int idade = 25;
+console.log("Nome:", nome, "Idade:", idade);

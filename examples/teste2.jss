@@ -1,9 +1,10 @@
-let int n1 = 10;
-let int n2 = 5;
+let str saudacao = "Ola" + " " + "Mundo";
+console.log(saudacao);
 
-console.log("Maior:", n1 > n2);        // true
-console.log("Menor:", n1 < n2);        // false
-console.log("Igual:", n1 == n2);       // false
-console.log("Diferente:", n1 != n2);   // true
-console.log("MaiorIgual:", n1 >= n2);  // true
-console.log("MenorIgual:", n1 <= n2);  // false
+let str parte1 = "Hello";
+let str parte2 = "World";
+let str completo = parte1 + " " + parte2;
+console.log(completo);
+
+let str msg = "A soma de " + "5 e 3 e ";
+console.log(msg, 8);

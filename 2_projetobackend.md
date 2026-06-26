@@ -96,3 +96,15 @@ Caso 2: Existe main
 → comandos globais também podem ser executados antes da main, mas isso deve ser documentado no README como regra do compilador.
 
 O clang chama @main → executa globals → executa main do usuário. Especificação cumprida — globals rodam antes da main.
+
+
+## TESTES DE IR PARA 
+
+1.basics CHECK!!
+2.Operatores CHECKKK!!
+3.Control_flows testados CHECKK!!
+4.STRING CASTS
+5.
+6.
+7.
+8.
