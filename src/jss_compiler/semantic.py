@@ -295,6 +295,7 @@ class SemanticAnalyzer:
         previous_scope = self.current_scope
         if create_scope:
             self.current_scope = Scope("bloco", previous_scope)
+        block.scope = self.current_scope
         for statement in block.statements:
             self._check_statement(statement)
         self.current_scope = previous_scope
@@ -808,5 +809,7 @@ class SemanticAnalyzer:
             )
 
 
-def analyze_semantics(program: Program) -> None:
-    SemanticAnalyzer().analyze(program)
+def analyze_semantics(program: Program) -> "SemanticAnalyzer":
+    analyzer = SemanticAnalyzer()
+    analyzer.analyze(program)
+    return analyzer

@@ -7,12 +7,13 @@ from antlr4 import CommonTokenStream  # type: ignore[import-untyped]
 from .antlr_error_listener import JSSErrorListener
 from .antlr_generated.JSSParser import JSSParser
 from .ast_builder import ASTBuilder
+from .ast_nodes import Program
 from .jss_token_source import JSSTokenSource
 from .lexer import Lexer
-from .semantic import analyze_semantics
+from .semantic import SemanticAnalyzer, analyze_semantics
 
 
-def analyze_source(source: str) -> None:
+def analyze_source(source: str) -> tuple[Program, SemanticAnalyzer]:
     """Executa análise léxica (Lexer JSS) + parsing (ANTLR4) + análise semântica."""
     # 1. Tokenização — usa o Lexer JSS existente (trata erros léxicos com mensagens precisas)
     tokens = Lexer(source).tokenize()
@@ -30,5 +31,6 @@ def analyze_source(source: str) -> None:
     # 4. Constrói a AST nos tipos de ast_nodes.py existentes
     ast = ASTBuilder().visit(tree)
 
-    # 5. Análise semântica — sem mudanças
-    analyze_semantics(ast)
+    # 5. Análise semântica — retorna o analyzer com escopos preservados
+    analyzer = analyze_semantics(ast)
+    return ast, analyzer

@@ -4,15 +4,22 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from .errors import JSSCompilerError
 from .frontend import analyze_source
+from .llvm_generator import generate_llvm
 
 
 def main() -> int:
-    """Recebe o caminho do arquivo JSS como argumento e executa o front-end."""
+    """Recebe o caminho do arquivo JSS como argumento e gera LLVM IR."""
     parser = argparse.ArgumentParser(description="Compilador JSS")
     parser.add_argument("arquivo", help="Arquivo fonte .jss a ser compilado")
+    parser.add_argument(
+        "-o", "--output",
+        help="Arquivo de saída .ll (padrão: mesmo nome do fonte com extensão .ll)",
+        default=None,
+    )
     args = parser.parse_args()
 
     try:
@@ -27,10 +34,20 @@ def main() -> int:
         return 1
 
     try:
-        analyze_source(source)
+        ast, analyzer = analyze_source(source)
     except JSSCompilerError as error:
         print(error)
         return 1
 
-    print("Programa válido.")
+    ir = generate_llvm(ast, analyzer)
+
+    output_path = args.output if args.output else Path(args.arquivo).with_suffix(".ll")
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(ir)
+    except OSError as e:
+        print(f"Erro ao escrever '{output_path}': {e}")
+        return 1
+
+    print(f"LLVM IR gerado: {output_path}")
     return 0

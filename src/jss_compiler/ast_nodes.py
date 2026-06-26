@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from .semantic import Scope
 
 from .tokens import Token
 
@@ -97,6 +100,7 @@ class AttributeDeclaration(Node):
 @dataclass(slots=True)
 class Block(Node):
     statements: list[Node]
+    scope: Any = None  # preenchido pelo SemanticAnalyzer (tipo: Scope)
 
 
 @dataclass(slots=True)
