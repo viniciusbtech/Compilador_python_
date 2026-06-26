@@ -635,13 +635,6 @@ class SemanticAnalyzer:
             self._require_assignable(target_type, value_type, expression.value)
             return target_type
 
-        if operator in {TokenType.AND_AND_ASSIGN, TokenType.OR_OR_ASSIGN}:
-            if target_type.name != "bool":
-                raise SemanticError("&&= e ||= requerem alvo do tipo bool", expression.line, expression.column)
-            if value_type.name != "bool":
-                raise SemanticError("&&= e ||= requerem valor do tipo bool", expression.line, expression.column)
-            return TypeInfo("bool")
-
         fake_operator = {
             TokenType.PLUS_ASSIGN: TokenType.PLUS,
             TokenType.MINUS_ASSIGN: TokenType.MINUS,

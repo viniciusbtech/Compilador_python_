@@ -39,8 +39,6 @@ _JSS_TO_ANTLR: dict[TokenType, int] = {
     TokenType.STRING_LITERAL: JSSLexer.STRING_LITERAL,
     TokenType.IDENTIFIER:     JSSLexer.IDENTIFIER,
     TokenType.POWER_ASSIGN:   JSSLexer.POWER_ASSIGN,
-    TokenType.AND_AND_ASSIGN: JSSLexer.AND_AND_ASSIGN,
-    TokenType.OR_OR_ASSIGN:   JSSLexer.OR_OR_ASSIGN,
     TokenType.POWER:          JSSLexer.POWER,
     TokenType.EQUAL_EQUAL:    JSSLexer.EQUAL_EQUAL,
     TokenType.BANG_EQUAL:     JSSLexer.BANG_EQUAL,

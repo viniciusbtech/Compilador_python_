@@ -44,8 +44,6 @@ class Lexer:
 
     THREE_CHARACTER_TOKENS: dict[str, TokenType] = {
         "**=": TokenType.POWER_ASSIGN,
-        "&&=": TokenType.AND_AND_ASSIGN,
-        "||=": TokenType.OR_OR_ASSIGN,
     }
 
     TWO_CHARACTER_TOKENS: dict[str, TokenType] = {

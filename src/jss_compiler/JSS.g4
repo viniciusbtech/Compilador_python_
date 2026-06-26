@@ -152,8 +152,6 @@ assignOp
     | SLASH_ASSIGN
     | PERCENT_ASSIGN
     | POWER_ASSIGN
-    | AND_AND_ASSIGN
-    | OR_OR_ASSIGN
     ;
 
 logicalOr
@@ -275,8 +273,6 @@ IDENTIFIER
 
 // Operadores — da combinação mais longa para a mais curta
 POWER_ASSIGN    : '**=' ;
-AND_AND_ASSIGN  : '&&=' ;
-OR_OR_ASSIGN    : '||=' ;
 POWER           : '**' ;
 EQUAL_EQUAL     : '==' ;
 BANG_EQUAL      : '!=' ;

@@ -77,8 +77,6 @@ class TokenType(Enum):
     SLASH_ASSIGN = auto()
     PERCENT_ASSIGN = auto()
     POWER_ASSIGN = auto()
-    AND_AND_ASSIGN = auto()
-    OR_OR_ASSIGN = auto()
 
 
 @dataclass(frozen=True, slots=True)

@@ -50,8 +50,6 @@ _ANTLR_TO_JSS: dict[int, TokenType] = {
     JSSLexer.SLASH_ASSIGN:    TokenType.SLASH_ASSIGN,
     JSSLexer.PERCENT_ASSIGN:  TokenType.PERCENT_ASSIGN,
     JSSLexer.POWER_ASSIGN:    TokenType.POWER_ASSIGN,
-    JSSLexer.AND_AND_ASSIGN:  TokenType.AND_AND_ASSIGN,
-    JSSLexer.OR_OR_ASSIGN:    TokenType.OR_OR_ASSIGN,
     JSSLexer.PLUS:            TokenType.PLUS,
     JSSLexer.MINUS:           TokenType.MINUS,
     JSSLexer.STAR:            TokenType.STAR,
