@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 
+import llvmlite.binding as llvm
 import llvmlite.ir as ir
 
 from .ast_nodes import (
     Assignment,
     AttributeAccess,
+    AttributeDeclaration,
     BinaryOperation,
     Block,
     BreakStatement,
@@ -30,6 +33,7 @@ from .ast_nodes import (
     ReturnStatement,
     TypeNode,
     UnaryOperation,
+    This,
     VarDeclaration,
     WhileStatement,
 )
@@ -103,6 +107,13 @@ class LLVMGenerator:
         self._module    = ir.Module(name="jss_module")
         self._module.triple = "x86_64-pc-windows-msvc"
 
+        # TargetData real para cálculo de tamanho de structs
+        _X86_64_LAYOUT = (
+            "e-m:w-p270:32:32-p271:32:32-p272:64:64"
+            "-i64:64-f80:128-n8:16:32:64-S128"
+        )
+        self._target_data = llvm.create_target_data(_X86_64_LAYOUT)
+
         # Estado do gerador durante a travessia
         self._builder:          ir.IRBuilder | None = None
         self._current_scope:    Scope | None = None
@@ -129,6 +140,26 @@ class LLVMGenerator:
             ir.FunctionType(_STR, [ir.IntType(64)]),
             name="malloc",
         )
+        self._sprintf = ir.Function(
+            self._module,
+            ir.FunctionType(_INT, [_STR, _STR], var_arg=True),
+            name="sprintf",
+        )
+        self._strlen = ir.Function(
+            self._module,
+            ir.FunctionType(ir.IntType(64), [_STR]),
+            name="strlen",
+        )
+        self._strcpy = ir.Function(
+            self._module,
+            ir.FunctionType(_STR, [_STR, _STR]),
+            name="strcpy",
+        )
+        self._strcat = ir.Function(
+            self._module,
+            ir.FunctionType(_STR, [_STR, _STR]),
+            name="strcat",
+        )
 
     # ------------------------------------------------------------------
     # Ponto de entrada
@@ -137,7 +168,17 @@ class LLVMGenerator:
     def generate(self) -> str:
         # 1. Tipos de classes (structs)
         for name, class_info in self._analyzer.classes.items():
-            field_types = [_base_type(s.type_info.name) for s in class_info.attributes.values()]
+            attr_decls = {
+                m.name: m for m in class_info.declaration.members
+                if isinstance(m, AttributeDeclaration)
+            }
+            field_types = []
+            for attr_name, sym in class_info.attributes.items():
+                attr_decl = attr_decls.get(attr_name)
+                if attr_decl is not None:
+                    field_types.append(_llvm_type_from_type_node(attr_decl.type_node))
+                else:
+                    field_types.append(_base_type(sym.type_info.name))
             struct = self._module.context.get_identified_type(name)
             struct.set_body(*field_types)
             self._struct_types[name] = struct
@@ -156,11 +197,21 @@ class LLVMGenerator:
                 gvar.linkage = "internal"
                 self._globals[name] = gvar
 
-        # 3. Coleta statements globais (tudo que não é var/função/classe)
-        global_stmts = [
-            decl for decl in self._program.declarations
-            if not isinstance(decl, (VarDeclaration, FunctionDeclaration, ClassDeclaration))
-        ]
+        # 3. Coleta statements globais (não-var/função/classe) +
+        #    VarDeclarations str com inicializador BinaryOperation (concatenação runtime)
+        global_stmts = []
+        for decl in self._program.declarations:
+            if isinstance(decl, (FunctionDeclaration, ClassDeclaration)):
+                continue
+            if isinstance(decl, VarDeclaration):
+                needs_runtime = any(
+                    d.initializer is not None and not isinstance(d.initializer, Literal)
+                    for d in decl.declarators
+                )
+                if needs_runtime:
+                    global_stmts.append(decl)
+            else:
+                global_stmts.append(decl)
 
         has_user_main = any(
             isinstance(d, FunctionDeclaration) and d.name == "main"
@@ -188,7 +239,9 @@ class LLVMGenerator:
             has_user_main=has_user_main,
         )
 
-        return str(self._module)
+        ir_text = str(self._module)
+        ir_text = re.sub(r'\bdouble(\s+)0x0\b', r'double\g<1>0.000000e+00', ir_text)
+        return ir_text
 
     # ------------------------------------------------------------------
     # Declaração antecipada de funções (para forward calls)
@@ -200,7 +253,11 @@ class LLVMGenerator:
         class_prefix: str = "",
     ) -> ir.Function:
         ret_t  = _base_type(decl.return_type.name)
-        param_types = [_llvm_type(TypeInfo(p.type_node.name, p.type_node.is_array)) for p in decl.params]
+        param_types = [
+            _base_type(p.type_node.name).as_pointer() if p.type_node.is_array
+            else _base_type(p.type_node.name)
+            for p in decl.params
+        ]
         if class_prefix:
             struct_ptr = self._struct_types[class_prefix].as_pointer()
             param_types = [struct_ptr] + param_types
@@ -257,7 +314,10 @@ class LLVMGenerator:
 
         for i, param in enumerate(decl.params):
             arg = fn.args[i + param_offset]
-            param_t = _llvm_type(TypeInfo(param.type_node.name, param.type_node.is_array))
+            if param.type_node.is_array:
+                param_t = _base_type(param.type_node.name).as_pointer()
+            else:
+                param_t = _llvm_type_from_type_node(param.type_node)
             alloca = self._builder.alloca(param_t, name=param.name)
             self._builder.store(arg, alloca)
             self._locals[param.name] = alloca
@@ -352,7 +412,7 @@ class LLVMGenerator:
         self._locals = {}
 
         # Aloca struct no heap
-        size = struct.get_abi_size(self._module.data_layout) if hasattr(struct, "get_abi_size") else 8
+        size = struct.get_abi_size(self._target_data) if hasattr(struct, "get_abi_size") else 8
         size_val = ir.Constant(ir.IntType(64), size)
         raw = self._builder.call(self._malloc, [size_val], name="raw")
         obj_ptr = self._builder.bitcast(raw, struct_ptr_t, name="obj")
@@ -384,10 +444,16 @@ class LLVMGenerator:
     # Pré-passagem: alloca de variáveis locais
     # ------------------------------------------------------------------
 
+    def _llvm_type_local(self, type_node: TypeNode) -> ir.Type:
+        """Tipo LLVM para variável local — resolve tipos de classe como ponteiro de struct."""
+        if type_node.name in self._struct_types:
+            return self._struct_types[type_node.name].as_pointer()
+        return _llvm_type_from_type_node(type_node)
+
     def _alloca_locals(self, block: Block) -> None:
         for stmt in block.statements:
             if isinstance(stmt, VarDeclaration):
-                llvm_t = _llvm_type_from_type_node(stmt.type_node)
+                llvm_t = self._llvm_type_local(stmt.type_node)
                 for d in stmt.declarators:
                     if d.name not in self._locals:
                         self._locals[d.name] = self._builder.alloca(llvm_t, name=d.name)  # type: ignore[union-attr]
@@ -405,7 +471,7 @@ class LLVMGenerator:
             self._alloca_locals(stmt.body)
         elif isinstance(stmt, ForStatement):
             if isinstance(stmt.initializer, VarDeclaration):
-                llvm_t = _llvm_type_from_type_node(stmt.initializer.type_node)
+                llvm_t = self._llvm_type_local(stmt.initializer.type_node)
                 for d in stmt.initializer.declarators:
                     if d.name not in self._locals:
                         self._locals[d.name] = self._builder.alloca(llvm_t, name=d.name)  # type: ignore[union-attr]
@@ -445,6 +511,11 @@ class LLVMGenerator:
         for d in decl.declarators:
             alloca = self._locals.get(d.name)
             if alloca is None:
+                gvar = self._globals.get(d.name)
+                if gvar is not None and d.initializer is not None and not isinstance(d.initializer, Literal):
+                    val = self._gen_expr(d.initializer)
+                    val = self._coerce(val, self._type_of(d.initializer), base)
+                    self._builder.store(val, gvar)  # type: ignore[union-attr]
                 continue
             if d.initializer is not None:
                 val = self._gen_expr(d.initializer)
@@ -712,6 +783,11 @@ class LLVMGenerator:
             return self._gen_attribute_access(node)
         if isinstance(node, NewObject):
             return self._gen_new_object(node)
+        if isinstance(node, This):
+            self_alloca = self._locals.get("self")
+            if self_alloca is not None:
+                return self._builder.load(self_alloca, name="this")  # type: ignore[union-attr]
+            return ir.Constant(_INT, 0)
         raise NotImplementedError(f"Expressão não suportada: {type(node).__name__}")
 
     def _gen_literal(self, node: Literal) -> ir.Value:
@@ -748,6 +824,17 @@ class LLVMGenerator:
         zero = ir.Constant(_INT, 0)
         return self._builder.gep(gvar, [zero, zero], inbounds=True, name="strptr")  # type: ignore[union-attr]
 
+    def _gen_str_concat(self, lv: ir.Value, rv: ir.Value) -> ir.Value:
+        """Concatenação runtime: malloc(strlen(lv)+strlen(rv)+1), strcpy, strcat."""
+        b = self._builder
+        len1 = b.call(self._strlen, [lv], name="slen1")  # type: ignore[union-attr]
+        len2 = b.call(self._strlen, [rv], name="slen2")  # type: ignore[union-attr]
+        total = b.add(b.add(len1, len2), ir.Constant(ir.IntType(64), 1), name="slen_total")  # type: ignore[union-attr]
+        buf = b.call(self._malloc, [total], name="sbuf")  # type: ignore[union-attr]
+        b.call(self._strcpy, [buf, lv])  # type: ignore[union-attr]
+        b.call(self._strcat, [buf, rv])  # type: ignore[union-attr]
+        return buf
+
     def _gen_identifier(self, node: Identifier) -> ir.Value:
         ptr = self._ptr_of_name(node.name)
         if ptr is not None:
@@ -766,6 +853,14 @@ class LLVMGenerator:
 
         lt  = self._type_of(node.left)
         rt  = self._type_of(node.right)
+
+        # Concatenação de strings: str + str
+        if op == TokenType.PLUS and lt.name == "str" and rt.name == "str":
+            if isinstance(node.left, Literal) and isinstance(node.right, Literal):
+                return self._make_string_constant(str(node.left.value) + str(node.right.value))
+            lv = self._gen_expr(node.left)
+            rv = self._gen_expr(node.right)
+            return self._gen_str_concat(lv, rv)
 
         lv  = self._gen_expr(node.left)
         rv  = self._gen_expr(node.right)
@@ -912,9 +1007,16 @@ class LLVMGenerator:
             for arg in node.arguments:
                 t   = self._type_of(arg)
                 fmt = self._fmt_string(t, newline=False)
-                ptr = self._ptr_of(arg)
-                if ptr is not None:
-                    self._builder.call(self._scanf, [fmt, ptr])  # type: ignore[union-attr]
+                if t.name == "str":
+                    buf = self._builder.call(self._malloc, [ir.Constant(ir.IntType(64), 256)], name="input_buf")  # type: ignore[union-attr]
+                    ptr = self._ptr_of(arg)
+                    if ptr is not None:
+                        self._builder.store(buf, ptr)  # type: ignore[union-attr]
+                    self._builder.call(self._scanf, [fmt, buf])  # type: ignore[union-attr]
+                else:
+                    ptr = self._ptr_of(arg)
+                    if ptr is not None:
+                        self._builder.call(self._scanf, [fmt, ptr])  # type: ignore[union-attr]
             return ir.Constant(_INT, 0)
 
         if callee_name in {"int", "real", "bool"} and node.arguments:
@@ -922,6 +1024,17 @@ class LLVMGenerator:
             src_t   = self._type_of(node.arguments[0])
             dest_t  = TypeInfo(callee_name)
             return self._coerce(src, src_t, dest_t)
+
+        if callee_name == "str" and node.arguments:
+            src   = self._gen_expr(node.arguments[0])
+            src_t = self._type_of(node.arguments[0])
+            buf   = self._builder.call(self._malloc, [ir.Constant(ir.IntType(64), 64)], name="str_buf")  # type: ignore[union-attr]
+            if src_t.name == "real":
+                fmt = self._make_string_constant("%f")
+            else:
+                fmt = self._make_string_constant("%d")
+            self._builder.call(self._sprintf, [buf, fmt, src])  # type: ignore[union-attr]
+            return buf
 
         return ir.Constant(_INT, 0)
 
@@ -967,10 +1080,16 @@ class LLVMGenerator:
         return val
 
     def _coerce_arg(self, arg_node: Node, expected_llvm: ir.Type) -> ir.Value:
+        arg_t = self._type_of(arg_node)
+        # Array argument decay: pass pointer to first element (C-style)
+        if arg_t.is_array and isinstance(expected_llvm, ir.PointerType):
+            ptr = self._ptr_of(arg_node)
+            if ptr is not None:
+                zero = ir.Constant(_INT, 0)
+                return self._builder.gep(ptr, [zero, zero], inbounds=True)
         val   = self._gen_expr(arg_node)
-        src_t = self._type_of(arg_node)
         dst_t = self._llvm_to_typeinfo(expected_llvm)
-        return self._coerce(val, src_t, dst_t)
+        return self._coerce(val, arg_t, dst_t)
 
     # ------------------------------------------------------------------
     # Ponteiros para lvalue (endereço de uma variável/elemento)
@@ -1002,14 +1121,22 @@ class LLVMGenerator:
             current = current.collection
         indices.reverse()  # ordem: exterior → interior = esquerda → direita
 
-        if not isinstance(current, Identifier):
+        if isinstance(current, Identifier):
+            coll_ptr = self._ptr_of_name(current.name)
+        elif isinstance(current, AttributeAccess):
+            coll_ptr = self._ptr_of(current)  # ponteiro para o campo ([N x [M x T]]*)
+        else:
             return None
-        coll_ptr = self._ptr_of_name(current.name)
         if coll_ptr is None:
             return None
 
         zero = ir.Constant(_INT, 0)
         idx_vals = [self._gen_expr(i) for i in indices]
+        # Pointer parameter (e.g. i32**): load to get base pointer, then GEP without leading 0
+        coll_pointee = getattr(coll_ptr.type, 'pointee', None)
+        if isinstance(coll_pointee, ir.PointerType):
+            base_ptr = self._builder.load(coll_ptr)  # type: ignore[union-attr]
+            return self._builder.gep(base_ptr, idx_vals, inbounds=True)  # type: ignore[union-attr]
         return self._builder.gep(coll_ptr, [zero] + idx_vals, inbounds=True)  # type: ignore[union-attr]
 
     def _ptr_of_name(self, name: str) -> ir.Value | None:
@@ -1072,6 +1199,8 @@ class LLVMGenerator:
                     return sym.type_info
         if isinstance(node, NewObject):
             return TypeInfo(node.class_name)
+        if isinstance(node, This):
+            return TypeInfo(self._current_class.declaration.name) if self._current_class else TypeInfo("int")
         if isinstance(node, Assignment):
             return self._type_of(node.target)
         return TypeInfo("int")

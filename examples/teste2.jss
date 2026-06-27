@@ -1,10 +1,10 @@
-let str saudacao = "Ola" + " " + "Mundo";
-console.log(saudacao);
+// === INPUT com multiplas variaveis ===
+let int a, b, c;
+console.log("Digite tres numeros:");
+input(a, b, c);
+console.log("Voce digitou:", a, b, c);
 
-let str parte1 = "Hello";
-let str parte2 = "World";
-let str completo = parte1 + " " + parte2;
-console.log(completo);
-
-let str msg = "A soma de " + "5 e 3 e ";
-console.log(msg, 8);
+let str nome1, nome2;
+console.log("Digite dois nomes:");
+input(nome1, nome2);
+console.log("Nomes:", nome1, "e", nome2);
