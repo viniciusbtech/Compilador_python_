@@ -4,42 +4,107 @@ PYTHON-->FRONTEND-->BACKEND--->X86(EXECUTAVEL)
 
 Fluxo completo
 
-codigo.jss
-    │
-    ▼
-┌─────────────┐
-│    Lexer    │  lexer.py
-│  (léxico)   │  → lê char por char, gera lista de Tokens
-└──────┬──────┘
-       │ list[Token]
-       ▼
-┌─────────────────────┐
-│  ANTLR4 Parser      │  antlr_generated/JSSParser.py
-│  (sintático)        │  → valida a gramática, gera Parse Tree
-└──────┬──────────────┘
-       │ Parse Tree
-       ▼
-┌─────────────┐
-│ ASTBuilder  │  ast_builder.py
-│             │  → percorre Parse Tree, constrói AST limpa
-└──────┬──────┘
-       │ AST (ast_nodes.py)
-       ▼
-┌──────────────────┐
-│ SemanticAnalyzer │  semantic.py
-│  (semântico)     │  → verifica tipos, escopos, constâncias
-│  + Scope chain   │  → anexa Scope a cada Block da AST
-└──────┬───────────┘
-       │ (AST, SemanticAnalyzer)
-       ▼
-┌────────────────┐
-│ LLVMGenerator  │  llvm_generator.py
-│  (llvmlite)    │  → constrói IR usando APIs reais do LLVM
-└──────┬─────────┘
-       │ texto LLVM IR
-       ▼
-  codigo.ll
+  codigo.jss
+      │
+      ▼
+  ┌─────────────┐
+  │    Lexer    │  lexer.py
+  │  (léxico)   │  → lê char por char, gera lista de Tokens
+  └──────┬──────┘
+         │ list[Token]
+         ▼
+  ┌─────────────────────┐
+  │  ANTLR4 Parser      │  antlr_generated/JSSParser.py
+  │  (sintático)        │  → valida a gramática, gera Parse Tree
+  └──────┬──────────────┘
+         │ Parse Tree
+         ▼
+  ┌─────────────┐
+  │ ASTBuilder  │  ast_builder.py
+  │             │  → percorre Parse Tree, constrói AST limpa
+  └──────┬──────┘
+         │ AST (ast_nodes.py)
+         ▼
+  ┌──────────────────┐
+  │ SemanticAnalyzer │  semantic.py
+  └──────┬───────────┘
+         │ (AST, SemanticAnalyzer)
+         ▼
+  ┌────────────────┐
+  │ LLVMGenerator  │  llvm_generator.py
+  │  (llvmlite)    │  → constrói IR usando APIs reais do LLVM
+  └──────┬─────────┘
+         │ texto LLVM IR
+         ▼
+    codigo.ll  atualize esse fluxo, nao no codigo,nao altere ele, aqui no terminal
 
+
+• Fluxo completo atualizado:
+
+  codigo.jss
+      │
+      ▼
+  ┌─────────────┐
+  │    Lexer    │  lexer.py
+  │  (léxico)   │  → lê char por char, gera lista de Tokens
+  └──────┬──────┘
+         │ list[Token]
+         ▼
+  ┌─────────────────────┐
+  │  ANTLR4 Parser      │  antlr_generated/JSSParser.py
+  │  (sintático)        │  → valida a gramática, gera Parse Tree
+  └──────┬──────────────┘
+         │ Parse Tree
+         ▼
+  ┌─────────────┐
+  │ ASTBuilder  │  ast_builder.py
+  │             │  → percorre Parse Tree, constrói AST limpa
+  └──────┬──────┘
+         │ AST (ast_nodes.py)
+         ▼
+  ┌──────────────────┐
+  │ SemanticAnalyzer │  semantic.py
+  │  (semântico)     │  → verifica tipos, escopos, constâncias
+  │  + Scope chain   │  → anexa Scope a cada Block da AST
+  └──────┬───────────┘
+         │ (AST, SemanticAnalyzer)
+         ▼
+  ┌────────────────┐
+  │ LLVMGenerator  │  llvm_generator.py
+  │  (llvmlite)    │  → constrói IR usando APIs reais do LLVM
+  └──────┬─────────┘
+         │ texto LLVM IR
+         ▼
+    codigo.ll
+         │
+         ▼
+  ┌────────────────┐
+  │     clang      │  ferramenta externa LLVM/Clang
+  │  (back-end SO) │  → compila o .ll para executável nativo
+  └──────┬─────────┘
+         │ executável Windows
+         ▼
+    codigo.exe
+         │
+         ▼
+  ┌────────────────┐
+  │   Execução     │  sistema operacional
+  │   do programa  │  → roda o código compilado
+  └────────────────┘
+
+
+
+
+ faz o fluxo completo:
+
+  .jss
+   -> lexer
+   -> parser
+   -> AST
+   -> análise semântica
+   -> LLVM IR .ll
+   -> clang
+   -> executável .exe
 
 ## Arquiterua de registradores
 LLVM
@@ -104,10 +169,10 @@ O clang chama @main → executa globals → executa main do usuário. Especifica
 2.Operatores IR
 3.Control_flows testados IR
 4.STRING CASTS IR 
-5.
-6.
-7.
-8.
+5.Classes IR
+6.Function IR 
+7.ERRO NEM CHEGA NA IR
+8.ERRO NEM CHEGA NA IR
 
 ## ESPECIFICAÇÂO SEPARADORES , CONSOLE.LOG 
 4. Nenhuma característica de outra linguagem deve ser reconhecida pelo compilador
@@ -195,22 +260,53 @@ Definição do Layout: Você cria um objeto que contém uma "string de layout" (
 
 Consulta: O LLVM pega a definição da sua struct (que você construiu antes), cruza com o TargetData (as regras da CPU) e calcula o tamanho final.
 
-## COMO ELA 
+## COMO ELA Gera o executável.
+ - O compilador recebe um arquivo .jss.
+  - Primeiro ele executa o front-end:
+      - lexer;
+      - parser;
+      - construção da AST;
+      - análise semântica.
 
+  - Se não houver erro, o compilador gera a linguagem intermediária:
 
+  arquivo.ll
 
+  - Esse arquivo .ll contém o código em LLVM IR.
+  - Depois disso, o compilador chama o clang.
+  - O clang recebe o arquivo LLVM IR:
 
+  clang arquivo.ll -o arquivo.exe
 
+  - O clang transforma o LLVM IR em código executável do sistema operacional.
+  - No Windows, o resultado final é:
 
+  arquivo.exe
 
+  - Fluxo completo:
 
+  arquivo.jss
+   -> AST validada
+   -> LLVM IR (.ll)
+   -> clang
+   -> executável (.exe)
 
+  - No modo build:
 
+  python .\main.py --build .\examples\soma_run.jss
 
+  gera:
 
+  soma_run.ll
+  soma_run.exe
 
+  - No modo run:
 
+  python .\main.py --run .\examples\soma_run.jss
 
+  gera o executável e já executa o programa.
+
+## TESTAR OS EXECUTAVEIS
 
 
 ## QUESTOES PARA SEREM TRATADAS NA EXECUÇÃO DEPOIS" AINDa NÂO TRATADA" 
@@ -247,4 +343,49 @@ gera getelementptr assumindo que i/j são válidos.
 Runtime check opcional: PODE OU NAO SER IMPLEMENTANDO 
 verifica i e j antes de acessar.
 
+
 ## AINDA NAO AVALIADA 
+
+
+## a) ja foi implementado
+  - tradução de variáveis globais e locais;
+  - funções;
+  - main;
+  - comandos globais via __jss_global_init;
+  - if, while, for;
+  - return e break;
+  - expressões aritméticas, relacionais e lógicas;
+  - atribuições simples e compostas;
+  - vetores;
+  - classes como struct;
+  - construtor;
+  - métodos;
+  - new;
+  - acesso a atributos;
+  - console.log;
+  - input;
+  - casts;
+  - strings com chamadas auxiliares como printf, scanf, malloc, sprintf, strcat. 
+
+
+## Testes PAra o executavel
+-teste1.exe CHECK
+-teste2.exe CHECK
+-teste3.exe CHECK
+-teste4.exe CHECK
+-teste5.exe CHECK
+-teste6.exe CHECK
+
+erros 
+erro1.jss
+erro2.jss
+erro3.jss
+erro3.jss
+erro4.jss
+erro5.jss
+erro6.jss
+erro7.jss
+erro8.jss
+erro9.jss
+erro10.jss
+

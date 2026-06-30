@@ -1,84 +1,60 @@
-// Testes de funcoes: declaracao, chamada, parametros, return, arrays
+// Testes de tipos basicos: variaveis, constantes, arrays
 
-// Funcao simples
-function int soma(int a, int b) {
-    return a + b;
-}
+// === VARIAVEIS ===
+let int x = 10;
+let real y = 3.14;
+let str nome = "Joao";
+let bool ativo = true;
 
-// Funcao void
-function void imprimirMensagem(str msg) {
-    console.log("Mensagem:", msg);
-}
+console.log("Int:", x);
+console.log("Real:", y);
+console.log("String:", nome);
+console.log("Bool:", ativo);
 
-// Funcao com multiplos parametros
-function real calcularMedia(int a, int b, int c) {
-    let int soma = a + b + c;
-    return real(soma) / 3.0;
-}
+// Multiplas declaracoes
+let int a, b, c;
+a = 5;
+b = 10;
+c = a + b;
+console.log("Soma:", c);
 
-// Funcao que retorna bool
-function bool ehPar(int n) {
-    return (n % 2) == 0;
-}
+// === CONSTANTES ===
+const int MAX = 100;
+const real PI = 3.14159;
+const str MSG = "Constante";
+console.log("Constantes:", MAX, PI, MSG);
 
-// Funcao que retorna string
-function str getNomeCompleto(str nome, str sobrenome) {
-    return nome + " " + sobrenome;
-}
+// === ARRAYS 1D ===
+let int[5] numeros;
+numeros[0] = 10;
+numeros[1] = 20;
+numeros[2] = 30;
+numeros[3] = 40;
+numeros[4] = 50;
 
-// Funcao com array como parametro
-function int somarArray(int[5] arr) {
-    let int total = 0;
-    for (let int i = 0; i < 5; i = i + 1) {
-        total += arr[i];
-    }
-    return total;
-}
+console.log("Array[0]:", numeros[0]);
+console.log("Array[4]:", numeros[4]);
 
-// Funcao recursiva (fatorial)
-function int fatorial(int n) {
-    if (n <= 1) {
-        return 1;
-    }
-    return n * fatorial(n - 1);
-}
+// === ARRAYS 2D ===
+let int[3][3] matriz;
+matriz[0][0] = 1;
+matriz[0][1] = 2;
+matriz[0][2] = 3;
+matriz[1][0] = 4;
+matriz[1][1] = 5;
+matriz[1][2] = 6;
+matriz[2][0] = 7;
+matriz[2][1] = 8;
+matriz[2][2] = 9;
 
-// Funcao void com return vazio
-function void processar() {
-    console.log("Processando...");
-    return;
-}
+console.log("Matriz[1][1]:", matriz[1][1]);
 
-function void main() {
-    // Testando funcoes
-    let int resultado = soma(5, 3);
-    console.log("Soma:", resultado);
+// Atribuicao composta em arrays
+let int[3] arr;
+arr[0] = 10;
+arr[0] += 5;   // 15
+console.log("Array com +=:", arr[0]);
 
-    imprimirMensagem("Ola Mundo");
-
-    let real media = calcularMedia(8, 7, 9);
-    console.log("Media:", media);
-
-    let bool par = ehPar(10);
-    console.log("10 eh par?", par);
-
-    let str nomeCompleto = getNomeCompleto("Joao", "Silva");
-    console.log("Nome:", nomeCompleto);
-
-    // Array em funcao
-    let int[5] numeros;
-    numeros[0] = 10;
-    numeros[1] = 20;
-    numeros[2] = 30;
-    numeros[3] = 40;
-    numeros[4] = 50;
-    let int total = somarArray(numeros);
-    console.log("Total:", total);
-
-    // Recursao
-    let int fat5 = fatorial(5);
-    console.log("Fatorial de 5:", fat5);
-
-    // Void com return
-    processar();
-}
+arr[1] = 20;
+arr[1] *= 2;   // 40
+console.log("Array com *=:", arr[1]);

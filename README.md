@@ -58,6 +58,18 @@ $env:PYTHONPATH = "$PWD\src"
 ```
 
 ## Como executar o compilador
+## ETAPA DE BUILD //Gerar .LL e .EXE SEM EXECUTAR
+  python .\main.py arquivo.jss
+  python .\main.py --build arquivo.jss
+  python .\main.py .\examples\soma_run.jss
+## ETAPDA DE RUN GERA EXECUTAVVEL E JA EXECUTA
+  python .\main.py --run .\examples\teste1.jss
+
+## fluxo de execução simplificado (GERA A IR E O EXE ) *** a) e b)
+  BUILD + RUN(DO EXE GERADO PELO BUILD) -- GERA A LL E O EXE E EXECUTA A EXE GERADA
+  python .\main.py .\examples\teste1.jss 
+  .\examples\teste1.exe                       
+
 
 O compilador recebe o caminho do arquivo `.jss` como argumento:
 
@@ -72,19 +84,34 @@ python .\main.py .\examples\nome_do_arquivo.jss
 ```
 
 Testes disponíveis (1 a 10):
+```powershell BUILD DOS TESTES 
 
-```powershell
 python .\main.py .\examples\teste1.jss
+.\examples\teste1.exe  
 python .\main.py .\examples\teste2.jss
+.\examples\teste2.exe  
 python .\main.py .\examples\teste3.jss
+.\examples\teste3.exe  
 python .\main.py .\examples\teste4.jss
+.\examples\teste4.exe  
 python .\main.py .\examples\teste5.jss
+.\examples\teste5.exe  
 python .\main.py .\examples\teste6.jss
+.\examples\teste6.exe  
 python .\main.py .\examples\teste7.jss
+.\examples\teste7.exe  
 python .\main.py .\examples\teste8.jss
+.\examples\teste8.exe  
 python .\main.py .\examples\teste9.jss
+.\examples\teste9.exe 
 python .\main.py .\examples\teste10.jss
+.\examples\teste10.exe  
 ```
+
+## NO POWERSHELL NA PASTA ONDE O EXECUTAVEL ESTA NO WINDOS VOCE PODE EXECUTAR SIMPLESMENTE
+abrindo o powershell na pasta onde esta o exe 
+e rodandoe sse comando
+ .\teste1.exe
 
 Para rodar todos os testes automaticamente:
 
@@ -92,7 +119,7 @@ Para rodar todos os testes automaticamente:
 powershell -ExecutionPolicy Bypass -File .\testar_tudo.ps1
 powershell -ExecutionPolicy Bypass -File .\teste_1_10.ps1
 powershell -ExecutionPolicy Bypass -File .\executar_run.ps1
-esse ultimo script roda todos os arquivos .jss que estao em run
+esse ultimo script roda todos os arquivos .jss que estao em run NAO E RUN E SO O BUILD O RUN E MANUAL AINDA 
 O script roda todos os arquivos .jss que estiverem lá, em ordem alfabética, e imprime a saída de cada um.
 ```
 
@@ -101,283 +128,3 @@ Saida esperada para um programa lexica e sintaticamente valido:
 ```text
 Programa válido.
 ```
-
-## Como ver os tokens do lexer
-
-```powershell
-python -m jss_compiler.debug_lexer .\examples\teste1.jss
-```
-
-A saida mostra localizacao, tipo do token e lexema:
-
-```text
-LOCAL      TOKEN                  LEXEMA
-------------------------------------------------------------
-1:1        FUNCTION               'function'
-1:10       VOID                   'void'
-...
-```
-
-## Como ver a saida do parser
-
-Use o utilitario `debug_parser` para imprimir a AST em JSON:
-
-```powershell
-python -m jss_compiler.debug_parser .\examples\teste1.jss
-```
-
-Esse comando permite conferir se o parser respeitou precedencia, associatividade, blocos, chamadas nativas, vetores, classes e declaracoes.
-
-Exemplo de trecho da AST:
-
-```json
-{
-  "node": "FunctionDeclaration",
-  "return_type": {
-    "node": "TypeNode",
-    "name": "void"
-  },
-  "name": "main",
-  "params": [],
-  "body": {
-    "node": "Block"
-  }
-}
-```
-
-Se houver erro sintatico, a mensagem inclui linha e coluna:
-
-```text
-Erro sintático na linha 1, coluna 10: esperado ';' apos declaracao
-```
-
-## Parser implementado
-
-O parser foi construido em `src/jss_compiler/parser.py` por **descida recursiva top-down**, com uma funcao para cada parte principal da gramatica:
-
-- programa e declaracoes globais;
-- declaracoes `let` e `const`;
-- funcoes globais;
-- classes, atributos, construtores e metodos;
-- blocos e comandos;
-- `if`, `else if`, `else`, `while`, `for`, `return` e `break`;
-- expressoes com precedencia;
-- chamadas nativas e casts.
-
-O simbolo inicial e:
-
-```text
-Programa -> DeclaracaoGlobal*
-```
-
-Declaracoes globais aceitas:
-
-```text
-let Tipo ...
-const Tipo ...
-function TipoRetorno id(...)
-class id { ... }
-```
-
-O parser rejeita funcao declarada dentro de bloco ou funcao, porque funcoes JSS devem ficar no escopo global.
-
-## Precedencia de expressoes
-
-A expressao e separada nos seguintes niveis, do menor para o maior:
-
-```text
-Atribuicao
-OuLogico
-ELogico
-IgualdadeRelacional
-Soma
-Multiplicacao
-Exponenciacao
-Unario
-Primario/Postfix
-```
-
-Regras importantes implementadas:
-
-- atribuicao (`=`, `+=`, `-=`, `*=`, `/=`, `%=`, `**=`) e associativa a direita;
-- exponenciacao (`**`) e associativa a direita;
-- demais operadores binarios sao associativos a esquerda;
-- `+` e apenas reconhecido pelo parser; soma numerica ou concatenacao deve ser decidido na analise semantica.
-
-Exemplos:
-
-```text
-x = y = 10        -> x = (y = 10)
-2 ** 3 ** 2      -> 2 ** (3 ** 2)
-1 + 2 * 3        -> 1 + (2 * 3)
-```
-
-## AST e tabela de simbolos
-
-Os nos da AST ficam em `src/jss_compiler/ast_nodes.py`.
-
-Principais nos:
-
-- `Program`
-- `VarDeclaration`
-- `FunctionDeclaration`
-- `ClassDeclaration`
-- `Block`
-- `IfStatement`
-- `WhileStatement`
-- `ForStatement`
-- `ReturnStatement`
-- `BreakStatement`
-- `Assignment`
-- `BinaryOperation`
-- `UnaryOperation`
-- `Call`
-- `IndexAccess`
-- `AttributeAccess`
-- `NewObject`
-- `Literal`
-- `Identifier`
-
-O parser tambem monta uma tabela de simbolos inicial em `Program.symbols`, com:
-
-- nome;
-- categoria;
-- tipo;
-- escopo;
-- linha e coluna da declaracao.
-
-Essa tabela prepara a etapa de analise semantica. Validacoes como redeclaracao, tipos, `break` fora de laco, retorno incompativel e regras de `const` ainda pertencem a etapa semantica.
-
-## Recursos reconhecidos pelo parser
-
-- `let` e `const`;
-- tipos `int`, `real`, `str`, `bool`, `void` como retorno e identificadores de classe;
-- funcoes globais;
-- classe, atributo, construtor e metodo;
-- blocos `{ ... }`;
-- `if`, `else if`, `else`;
-- `while` e `for`;
-- `return` e `break`;
-- vetores em declaracao, acesso e inicializacao;
-- chamadas de funcao;
-- `input(...)`;
-- `console.log(...)`;
-- casts `int(...)`, `real(...)`, `bool(...)`, `str(...)`;
-- `new Classe(...)`;
-- `this.atributo`;
-- acesso por ponto e por indice.
-
-## Testes
-
-Execute toda a bateria:
-
-```powershell
-python -m pytest
-```
-
-Executar apenas os testes do parser:
-
-```powershell
-python -m pytest tests\test_parser.py -v
-```
-
-Executar apenas os testes do lexer:
-
-```powershell
-python -m pytest tests\test_lexer.py tests\test_lexer_bateria.py -v
-```
-
-## Arquivos uteis para teste manual
-
-Compilar um arquivo:
-
-```powershell
-python .\main.py .\examples\teste1.jss
-```
-
-Inspecionar tokens do lexer:
-
-```powershell
-python -m jss_compiler.debug_lexer .\examples\teste1.jss
-```
-
-Tabela de simbolos (AST em JSON):
-
-```powershell
-python -m jss_compiler.debug_parser .\examples\teste1.jss
-```
-
-## Atualizacao: analise semantica
-
-O front-end agora tambem executa a etapa de analise semantica depois do parser:
-
-```text
-arquivo .jss
-   -> lexer
-   -> tokens com linha/coluna
-   -> parser
-   -> AST + tabela de simbolos inicial
-   -> analisador semantico
-   -> programa validado semanticamente
-```
-
-Novo arquivo principal:
-
-```text
-src/jss_compiler/semantic.py
-```
-
-O `frontend.py` passou a chamar `analyze_semantics(program)` depois de construir a AST. Assim, `python .\main.py` valida erros lexicos, sintaticos e semanticos no mesmo fluxo.
-
-Regras semanticas implementadas:
-
-- linguagem case-sensitive: nomes com grafias diferentes continuam sendo identificadores distintos;
-- proibicao de redeclaracao de `let`, `const`, funcoes e classes no mesmo escopo;
-- escopo global, escopo de funcao/metodo/construtor e escopos de bloco para `let` e `const`;
-- validacao de tipos primitivos `int`, `real`, `str` e `bool`;
-- sem conversoes implicitas: mudanca de tipo exige cast explicito com `int(...)`, `real(...)`, `bool(...)` ou `str(...)`;
-- proibicao de mistura de tipos em atribuicoes, operacoes aritmeticas, concatenacao e comparacoes;
-- concatenacao com `+` apenas entre operandos `str`;
-- operadores logicos e relacionais retornando `bool`, com validacao de operandos;
-- casts nativos `int(...)`, `real(...)`, `bool(...)` e `str(...)`;
-- vetores homogeneos e inicializacao por lista apenas na declaracao;
-- erro ao alterar constante ou elemento de vetor constante;
-- comandos de expressao no escopo global, permitindo atribuicoes fora de funcoes;
-- validacao de classes com atributos antes de construtores/metodos, ao menos uma variavel e ao menos um construtor;
-- validacao de construtor, `this`, atributos, metodos e `new Classe(...)`;
-- metodos em classes sao opcionais;
-- proibicao de conflito entre nome de funcao e identificadores globais ja declarados;
-- `main`, quando declarada, deve ter lista de parametros vazia;
-- `break` apenas dentro de `while` ou `for`;
-- `return` compativel com o tipo da funcao ou metodo.
-
-As mensagens do CLI agora sao emitidas na saida padrao: confirmacao de sucesso, erro lexico, erro sintatico e erro semantico. Os erros indicam linha e coluna:
-
-```text
-Erro semantico na linha 3, coluna 5: constante 'x' nao pode ser alterada
-```
-
-Tambem foi adicionada uma bateria especifica:
-
-```powershell
-python -m pytest tests\test_semantic.py -v
-```
-
-Na estrutura do projeto, considere agora tambem:
-
-```text
-jss-compiler/
-|-- src/
-|   `-- jss_compiler/
-|       |-- semantic.py
-|       `-- frontend.py  # integra lexer, parser e semantico
-`-- tests/
-    `-- test_semantic.py
-```
-
-
-## Proximas etapas
-
-1. Gerar codigo intermediario (LLVM IR ou JASMIN) percorrendo a AST.
-
-

@@ -1,24 +1,71 @@
-// Int para Real
-let int valor_int = 42;
-let real valor_real = real(valor_int);
-console.log("Int->Real:", valor_int, "->", valor_real);
+// Testes de estruturas de controle: if, for, while, break
 
-// Real para Int
-let real pi = 3.14;
-let int pi_int = int(pi);
-console.log("Real->Int:", pi, "->", pi_int);
+// === IF-ELSE ===
+let int idade = 20;
+if (idade >= 18) {
+    console.log("Maior de idade");
+} else {
+    console.log("Menor de idade");
+}
 
-// Para String
-let str num_str = str(valor_int);
-console.log("Int->String:", num_str);
+// IF-ELSE IF-ELSE
+let int nota = 7;
+if (nota >= 9) {
+    console.log("A");
+} else if (nota >= 7) {
+    console.log("B");
+} else if (nota >= 5) {
+    console.log("C");
+} else {
+    console.log("F");
+}
 
-// Para Bool
-let int zero = 0;
-let int nao_zero = 5;
-let bool falso = bool(zero);
-let bool verdadeiro = bool(nao_zero);
-console.log("Int->Bool:", falso, verdadeiro);
+// === FOR ===
+let int soma = 0;
+for (let int i = 1; i <= 10; i = i + 1) {
+    soma += i;
+}
+console.log("Soma 1-10:", soma);
 
-// Cast em expressoes
-let int result = int(5.5 + 4.5);
-console.log("Cast expressao:", result);
+// FOR aninhado
+for (let int x = 0; x < 3; x = x + 1) {
+    for (let int y = 0; y < 2; y = y + 1) {
+        console.log("x:", x, "y:", y);
+    }
+}
+
+// Iterando array
+let int[5] numeros;
+for (let int i = 0; i < 5; i = i + 1) {
+    numeros[i] = i;
+    console.log("numeros[", i, "]:", numeros[i]);
+}
+
+
+// === WHILE ===
+let int contador = 0;
+while (contador < 5) {
+    console.log("Contador:", contador);
+    contador = contador + 1;
+}
+
+// WHILE com BREAK
+let int j = 0;
+while (true) {
+    if (j == 3) {
+        break;
+    }
+    console.log("j:", j);
+    j = j + 1;
+}
+
+// WHILE aninhado
+let int a = 0;
+while (a < 2) {
+    let int b = 0;
+    while (b < 3) {
+        console.log("a:", a, "b:", b);
+        b = b + 1;
+    }
+    a = a + 1;
+}

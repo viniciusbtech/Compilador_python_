@@ -1,349 +1,144 @@
-
-## a)Regras para tradução da parse tree ou arvore sintática no passo anterior para uma linguagem intermediária, podendo ser LLVM ou JASMIN.
-
----
-Regras de Tradução AST → LLVM IR
+# Regras de Tradução: AST → LLVM IR
 
 ---
-Tipos
 
+## 1. Tipos
 
----
-Regras de Tradução AST → LLVM IR
-
----
-Tipos
-
-┌────────────┬───────────────┬──────────────────────
-│    JSS     │     LLVM      │             Regra             │
-├────────────┼───────────────┼──────────────────────
-│ int        │ i32           │ inteiro 32 bits com sinal     │
-├────────────┼───────────────┼───────────────────────────────┤
-│ real       │ double        │ ponto flutuante 64 bi
-───┼───────────────┼───────────────────────────────┤
-│ bool       │ i1            │ inteiro 1 bit                 │
-├────────────┼───────────────┼───────────────────────────────┤
-│ str        │ i8*           │ ponteiro para array de bytes  │
-├────────────┼───────────────┼──────────────────────
-│ void       │ void          │ apenas em retorno de função   │
-├────────────┼───────────────┼──────────────────────
-│ NomeClasse │ %NomeClasse*  │ ponteiro para struct          │
-├────────────┼───────────────┼──────────────────────
-│ int[]      │ [0 x i32]*    │ ponteiro para array de i32    │
-├────────────┼───────────────┼───────────────────────────────┤
-│ real[]     │ [0 x double]* │ ponteiro para array d
-└────────────┴───────────────┴───────────────────────────────┘
+| JSS        | LLVM IR        | Descrição                        |
+|------------|----------------|----------------------------------|
+| `int`      | `i32`          | Inteiro 32 bits com sinal        |
+| `real`     | `double`       | Ponto flutuante 64 bits          |
+| `bool`     | `i1`           | Inteiro de 1 bit (0 ou 1)        |
+| `str`      | `i8*`          | Ponteiro para array de bytes     |
+| `void`     | `void`         | Só em retorno de função          |
+| `NomeClasse` | `%NomeClasse*` | Ponteiro para struct            |
+| `int[]`    | `[0 x i32]*`   | Ponteiro para array de i32       |
 
 ---
-Classe → Struct
 
+## 2. Classes → Structs
+
+```
 class Ponto { int x; int y; }
-↓
+  ↓
 %Ponto = type { i32, i32 }
+```
 Cada atributo vira um campo da struct na ordem de declaração.
 
 ---
-Variável Global
 
-let int x = 0;
-↓
-@x = internal global i32 0
-Percorre global_scope.symbols e emite uma linha por
+## 3. Variáveis
+
+**Global:** `let int x = 0;` → `@x = internal global i32 0`
+
+**Local:** toda variável local ganha `alloca` no início da função, depois `store` no ponto de atribuição.
+
+**Parâmetros de função:** recebem `alloca + store` imediato para suportar reatribuição.
 
 ---
-Função
 
+## 4. Funções
+
+```
 function int soma(int a, int b) { ... }
-↓
+  ↓
 define i32 @soma(i32 %a_arg, i32 %b_arg) {
 entry:
-  %a = alloca i32
-  store i32 %a_arg, i32* %a
-  %b = alloca i32
-  store i32 %b_arg, i32* %b
+  %a = alloca i32 ; store i32 %a_arg, i32* %a
+  %b = alloca i32 ; store i32 %b_arg, i32* %b
   ...
 }
-Parâmetros recebem alloca + store imediato para poder ser reatribuídos dentro do corpo.
+```
 
 ---
-(variável local)
 
-let int x = 10;
-↓
-%x = alloca i32          ← emitido na pré-passagem (
-store i32 10, i32* %x   ← emitido na posição do statement
+## 5. Expressões Aritméticas e Lógicas
 
-let int[3] arr = [1, 2, 3];
-↓
-%arr = alloca [0 x i32]*
-%ptr0 = getelementptr ..., i32 0, i32 0 → store i32 1
-%ptr1 = getelementptr ..., i32 0, i32 1 → store i32 2
-%ptr2 = getelementptr ..., i32 0, i32 2 → store i32 3
+| JSS      | int       | real        |
+|----------|-----------|-------------|
+| `a + b`  | `add i32` | `fadd double` |
+| `a - b`  | `sub i32` | `fsub double` |
+| `a * b`  | `mul i32` | `fmul double` |
+| `a / b`  | `sdiv i32`| `fdiv double` |
+| `a % b`  | `srem i32`| —           |
+| `a && b` | `and i1`  | —           |
+| `a \|\| b` | `or i1` | —           |
 
----
-Assignment
-
-x = 5
-↓
-store i32 5, i32* %x
-
-x += 3
-↓
-%cur = load i32, i32* %x
-%res = add i32 %cur, 3
-store i32 %res, i32* %x
-
-Operadores compostos mapeados:
-
-┌─────┬──────────┬───────────┐
-│ JSS │ LLVM int │ LLVM real │
-├─────┼──────────┼───────────┤
-│ +=  │ add      │ fadd      │
-├─────┼──────────┼───────────┤
-  │ fsub      │
-├─────┼──────────┼───────────┤
-│ *=  │ mul      │ fmul      │
-├─────┼──────────┼───────────┤
-│ /=  │ sdiv     │ fdiv      │
-├─────┼──────────┼───────────┤
-│ %=  │ srem     │ —         │
-├─────┼──────────┼───────────┤
-│ **= │ mul      │ —         │
-└─────┴──────────┴───────────┘
+> **Promoção:** se qualquer operando for `real`, o `int` é convertido com `sitofp` antes da operação.
 
 ---
- — Aritmética
 
-┌────────┬───────────┬─────────────┐
-│  JSS   │ Tipos int │ Tipos real  │
-├────────┼───────────┼─────────────┤
-│ a + b  │ add i32   │ fadd double │
-├────────┼───────────┼─────────────┤
-│ a - b  │ sub i32   │ fsub double │
-├────────┼───────────┼─────────────┤
-│ a * b  │ mul i32   │ fmul double │
-├────────┼───────────┼─────────────┤
-│ a / b  │ sdiv i32  │ fdiv double │
-├────────┼───────────┼─────────────┤
-│ a % b  │ srem i32  │ —           │
-├────────┼───────────┼─────────────┤
-│ a && b │ and i1    │ —           │
-├────────┼───────────┼─────────────┤
-│ a || b │ or i1     │ —           │
-└────────┴───────────┴─────────────┘
+## 6. Comparações
 
-Regra de promoção: se qualquer operando for real, o ble antes da operação.
+| JSS     | int        | real       |
+|---------|------------|------------|
+| `a == b`| `icmp eq`  | `fcmp oeq` |
+| `a != b`| `icmp ne`  | `fcmp one` |
+| `a > b` | `icmp sgt` | `fcmp ogt` |
+| `a < b` | `icmp slt` | `fcmp olt` |
+
+Resultado sempre `i1`.
 
 ---
-BinaryOperation — Comparações
 
-┌────────┬───────────┬────────────┐
-│  JSS   │ Tipos int │ Tipos real │
-├────────┼───────────┼────────────┤
-│ a == b │ icmp eq   │ fcmp oeq   │
-├────────┼───────────┼────────────┤
-│ a != b │ icmp ne   │ fcmp one   │
-├────────┼───────────┼────────────┤
-│ a > b  │ icmp sgt  │ fcmp ogt   │
-├────────┼───────────┼────────────┤
-│ a >= b │ icmp sge  │ fcmp oge   │
-├────────┼───────────┼────────────┤
-│ a < b  │ icmp slt  │ fcmp olt   │
-├────────┼───────────┼────────────┤
-│ a <= b │ icmp sle  │ fcmp ole   │
-└────────┴───────────┴────────────┘
+## 7. Coerção de Tipos
 
-Resultado sempre i1.
-
----
-UnaryOperation
-
-┌───────────┬────────────────────────────────────────────────────────────┐
-│    JSS    │                            LLVM                            │
-├───────────┼───────────────────────────────────────
-│ -x (int)  │ neg i32 %x                                                 │
-├───────────┼───────────────────────────────────────
-│ -x (real) │ fneg double %x                                             │
-├───────────┼───────────────────────────────────────
-│ !b        │ not i1 %b                                                  │
-├───────────┼────────────────────────────────────────────────────────────┤
-│ x++ (pós) │ carrega valor, faz add 1, armazena, re
-├───────────┼────────────────────────────────────────────────────────────┤
-│ ++x (pré) │ carrega valor, faz add 1, armazena, retorna novo valor     │
-├───────────┼────────────────────────────────────────────────────────────┤
-│ x-- / --x │ igual mas sub 1                                            │
-└───────────┴───────────────────────────────────────
-
----
-Coerção de tipos
-
-┌──────┬──────┬─────────────────────────┐
-│  De  │ Para │     Instrução LLVM      │
-├──────┼──────┼─────────────────────────┤
-│ int  │ real │ sitofp i32 %x to double │
-├──────┼──────┼─────────────────────────┤
-│ real │ int  │ fptosi double %x to i32 │
-├──────┼──────┼─────────────────────────┤
-│ int  │ bool │ icmp ne i32 %x, 0       │
-├──────┼──────┼─────────────────────────┤
-│ bool │ int  │ zext i1 %x to i32       │
-├──────┼──────┼─────────────────────────┤
-│ bool │ real │ zext → sitofp           │
-└──────┴──────┴─────────────────────────┘
+| De   | Para | Instrução LLVM            |
+|------|------|---------------------------|
+| int  | real | `sitofp i32 %x to double` |
+| real | int  | `fptosi double %x to i32` |
+| int  | bool | `icmp ne i32 %x, 0`       |
+| bool | int  | `zext i1 %x to i32`       |
 
 Aplicada automaticamente em atribuições e chamadas quando os tipos diferem.
 
 ---
-IfStatement
 
-if (cond) { ... } else { ... }
-↓
-  %cond = ...
-  br i1 %cond, label %if_then, label %if_else
+## 8. Controle de Fluxo
 
-if_then:
-  ...
-  br label %if_merge
+**if/else** → gera labels `if_then`, `if_else`, `if_merge` ligados por `br i1`.
 
-if_else:
-  ...
-  br label %if_merge
+**while** → labels `while_cond`, `while_body`, `while_end`; o `break` salta para `while_end`.
 
-if_merge:
-  ...
+**for** → `init` emitido antes do label `for_cond`; `incr` emitido no fim de `for_body`.
 
-else if gera um if_then / if_else / if_merge aninhado dentro do if_else.
+**return** → `ret i32 %val` ou `ret void`.
 
 ---
-WhileStatement
 
-while (cond) { ... }
-↓
-  br label %while_cond
+## 9. Chamadas de Função
 
-while_cond:
-  %c = ...
-  br i1 %c, label %while_body, label %while_end
+**Usuário:** `soma(a, b)` → `%t = call i32 @soma(i32 %a_val, i32 %b_val)`
 
-while_body:
-  ...
-  br label %while_cond
+**console.log:** gera chamada a `@printf` com string de formato por tipo (`%d\n`, `%f\n`).
 
-while_end:
-  ...
+**input:** gera chamada a `@scanf` passando o **ponteiro** da variável (não o valor).
+
+**Casts:** `real(x)` → `sitofp`; `int(y)` → `fptosi`.
 
 ---
-ForStatement
 
-for (init; cond; incr) { ... }
-↓
-  ; init emitido aqui
-  br label %for_cond
+## 10. Arrays e Objetos
 
-for_cond:
-  %c = ...
-  br i1 %c, label %for_body, label %for_end
+**Acesso a array:** `arr[i]` → `getelementptr` + `load`; atribuição usa `store`.
 
-for_body:
-  ...
-  ; incr emitido ao final do body
-  br label %for_cond
+**Atributo de objeto:** `ponto.x` → `getelementptr` com índice do campo na struct + `load`.
 
-for_end:
-  ...
+**new:** `new Ponto(1,2)` → `call %Ponto* @Ponto.constructor(...)` que aloca via `malloc`.
 
----
-BreakStatement
+**String literal:** `"hello"` → constante global `[6 x i8]`, acesso via `getelementptr`.
 
-break
-↓
-br label %while_end   ← label do loop mais interno (pilha _break_stack)
 
----
-ReturnStatement
 
-return expr
-↓
-%val = ...
-ret i32 %val
+- Operadores unários (-x, !b, x++, ++x, x--, --x) e a distinção pré vs pós (pós retorna valor antigo, pré retorna novo) — seção inteira omitida.
+- Operadores compostos de atribuição (+=, -=, *=, /=, %=) com a tabela int vs real — reduzi demais.
+- Inicialização de array (let int[3] arr = [1,2,3]) que gera um getelementptr + store por elemento — não entrou.
+- String literal ficou só mencionada no item 10, sem explicar que vira constante global com \00 no fim.
+✻ Churned for 35s
 
-return          ← void
-↓
-ret void
+Algumas coisas ficaram de fora ou muito resumidas p
 
----
-Call (função do usuário)
-
-soma(a, b)
-↓
-%t = call i32 @soma(i32 %a_val, i32 %b_val)
-
----
-Call — console.log (nativa)
-
-console.log(x)     ← x é int
-↓
-%fmt = getelementptr [4 x i8], [4 x i8]* @str, i32 0, i32 0
-call i32 (i8*, ...) @printf(i8* %fmt, i32 %x)
-
-Formato por tipo: int → %d\n, real → %f\n, bool → %d
-
----
-Call — input (nativa)
-
-input(x)     ← x é int
-↓
-%fmt = getelementptr [3 x i8], [3 x i8]* @str, i32 0
-call i32 (i8*, ...) @scanf(i8* %fmt, i32* %x)
-
-Usa o ponteiro da variável (não o valor), pois scanf precisa escrever nela.
-
----
-Call — casts nativos
-
-real(x)   ← x é int
-↓
-%t = sitofp i32 %x to double
-
-int(y)    ← y é real
-↓
-%t = fptosi double %y to i32
-
----
-IndexAccess (array)
-
-arr[i]
-↓
-%ptr = getelementptr [0 x i32], [0 x i32]* %arr, i32
-%val = load i32, i32* %ptr
-
-Atribuição arr[i] = v usa o mesmo getelementptr mas com store ao invés de load.
-
----
-AttributeAccess (objeto)
-
-ponto.x     ← x é o campo 0
-↓
-%ptr = getelementptr %Ponto, %Ponto* %ponto, i32 0,
-%val = load i32, i32* %ptr
-
-O índice do campo é determinado pela posição do atributo na declaração da classe.
-
----
-NewObject
-
-new Ponto(1, 2)
-↓
-%obj = call %Ponto* @Ponto.constructor(i32 1, i32 2)
-
-O construtor aloca a struct via malloc, preenche os campos e retorna o ponteiro.
-
----
-String literal
-
-"hello"
-↓
-@str = private constant [6 x i8] c"hello\00"
-%ptr = getelementptr [6 x i8], [6 x i8]* @str, i32 0
-
-## FIM DAS REGRAS 
+- Operadores unários (-x, !b, x++, ++x, x--, --x) eretorna valor antigo, pré retorna novo) — seçãointeira omitida.
+- Operadores compostos de atribuição (+=, -=, *=, /al — reduzi demais.
+- Inicialização de array (let int[3] arr = [1,2,3]) que gera um getelementptr + store por elemento — não entrou.
+- String literal ficou só mencionada no item 10, se global com \00 no fim.
