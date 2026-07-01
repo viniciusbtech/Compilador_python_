@@ -16,6 +16,8 @@ declare i8* @"strcpy"(i8* %".1", i8* %".2")
 
 declare i8* @"strcat"(i8* %".1", i8* %".2")
 
+declare i32 @"SetConsoleOutputCP"(i32 %".1")
+
 define i32 @"soma"(i32 %".1", i32 %".2")
 {
 entry:
@@ -255,6 +257,7 @@ entry:
 define i32 @"main"()
 {
 entry:
+  %".2" = call i32 @"SetConsoleOutputCP"(i32 65001)
   call void @"__jss_user_main"()
   ret i32 0
 }

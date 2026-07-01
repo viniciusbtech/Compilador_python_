@@ -160,6 +160,11 @@ class LLVMGenerator:
             ir.FunctionType(_STR, [_STR, _STR]),
             name="strcat",
         )
+        self._set_console_output_cp = ir.Function(
+            self._module,
+            ir.FunctionType(_INT, [_INT]),
+            name="SetConsoleOutputCP",
+        )
 
     # ------------------------------------------------------------------
     # Ponto de entrada
@@ -383,6 +388,8 @@ class LLVMGenerator:
         fn = ir.Function(self._module, fntype, name="main")
         entry = fn.append_basic_block("entry")
         self._builder = ir.IRBuilder(entry)
+
+        self._builder.call(self._set_console_output_cp, [ir.Constant(_INT, 65001)])
 
         # Caso 1 — executa statements globais via __jss_global_init
         if has_global_init:
@@ -1028,6 +1035,10 @@ class LLVMGenerator:
         if callee_name == "str" and node.arguments:
             src   = self._gen_expr(node.arguments[0])
             src_t = self._type_of(node.arguments[0])
+            if src_t.name == "bool":
+                true_ptr  = self._make_string_constant("true")
+                false_ptr = self._make_string_constant("false")
+                return self._builder.select(src, true_ptr, false_ptr)  # type: ignore[union-attr]
             buf   = self._builder.call(self._malloc, [ir.Constant(ir.IntType(64), 64)], name="str_buf")  # type: ignore[union-attr]
             if src_t.name == "real":
                 fmt = self._make_string_constant("%f")
@@ -1072,6 +1083,8 @@ class LLVMGenerator:
             return b.fptosi(val, _INT)  # type: ignore[union-attr]
         if from_t.name == "int" and to_t.name == "bool":
             return b.icmp_signed("!=", val, ir.Constant(_INT, 0))  # type: ignore[union-attr]
+        if from_t.name == "real" and to_t.name == "bool":
+            return b.fcmp_ordered("!=", val, ir.Constant(_REAL, 0.0))  # type: ignore[union-attr]
         if from_t.name == "bool" and to_t.name == "int":
             return b.zext(val, _INT)  # type: ignore[union-attr]
         if from_t.name == "bool" and to_t.name == "real":

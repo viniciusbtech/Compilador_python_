@@ -4,40 +4,6 @@ PYTHON-->FRONTEND-->BACKEND--->X86(EXECUTAVEL)
 
 Fluxo completo
 
-  codigo.jss
-      │
-      ▼
-  ┌─────────────┐
-  │    Lexer    │  lexer.py
-  │  (léxico)   │  → lê char por char, gera lista de Tokens
-  └──────┬──────┘
-         │ list[Token]
-         ▼
-  ┌─────────────────────┐
-  │  ANTLR4 Parser      │  antlr_generated/JSSParser.py
-  │  (sintático)        │  → valida a gramática, gera Parse Tree
-  └──────┬──────────────┘
-         │ Parse Tree
-         ▼
-  ┌─────────────┐
-  │ ASTBuilder  │  ast_builder.py
-  │             │  → percorre Parse Tree, constrói AST limpa
-  └──────┬──────┘
-         │ AST (ast_nodes.py)
-         ▼
-  ┌──────────────────┐
-  │ SemanticAnalyzer │  semantic.py
-  └──────┬───────────┘
-         │ (AST, SemanticAnalyzer)
-         ▼
-  ┌────────────────┐
-  │ LLVMGenerator  │  llvm_generator.py
-  │  (llvmlite)    │  → constrói IR usando APIs reais do LLVM
-  └──────┬─────────┘
-         │ texto LLVM IR
-         ▼
-    codigo.ll  atualize esse fluxo, nao no codigo,nao altere ele, aqui no terminal
-
 
 • Fluxo completo atualizado:
 
@@ -388,4 +354,8 @@ erro7.jss
 erro8.jss
 erro9.jss
 erro10.jss
+
+Especificaçao teste1;
+espec1.jss
+espec2.jss
 

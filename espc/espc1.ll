@@ -16,6 +16,8 @@ declare i8* @"strcpy"(i8* %".1", i8* %".2")
 
 declare i8* @"strcat"(i8* %".1", i8* %".2")
 
+declare i32 @"SetConsoleOutputCP"(i32 %".1")
+
 @"a" = internal global i32 0
 @"b" = internal global i32 0
 @"c" = internal global i32 0
@@ -68,22 +70,18 @@ entry:
   %".23" = select  i1 %".22", i8* %"strptr.15", i8* %"strptr.16"
   %"strptr.17" = getelementptr inbounds [4 x i8], [4 x i8]* @"str.17", i32 0, i32 0
   %".24" = call i32 (i8*, ...) @"printf"(i8* %"strptr.17", i8* %".23")
+  %".25" = fcmp one double              0.000000e+00,              0x0
   %"strptr.18" = getelementptr inbounds [5 x i8], [5 x i8]* @"str.18", i32 0, i32 0
   %"strptr.19" = getelementptr inbounds [6 x i8], [6 x i8]* @"str.19", i32 0, i32 0
-  %".25" = select  double              0.000000e+00, i8* %"strptr.18", i8* %"strptr.19"
+  %".26" = select  i1 %".25", i8* %"strptr.18", i8* %"strptr.19"
   %"strptr.20" = getelementptr inbounds [4 x i8], [4 x i8]* @"str.20", i32 0, i32 0
-  %".26" = call i32 (i8*, ...) @"printf"(i8* %"strptr.20", i8* %".25")
-  %".27" = add i32 10, 5
+  %".27" = call i32 (i8*, ...) @"printf"(i8* %"strptr.20", i8* %".26")
+  %".28" = add i32 10, 5
   %"str_buf" = call i8* @"malloc"(i64 64)
   %"strptr.21" = getelementptr inbounds [3 x i8], [3 x i8]* @"str.21", i32 0, i32 0
-  %".28" = call i32 (i8*, i8*, ...) @"sprintf"(i8* %"str_buf", i8* %"strptr.21", i32 %".27")
+  %".29" = call i32 (i8*, i8*, ...) @"sprintf"(i8* %"str_buf", i8* %"strptr.21", i32 %".28")
   %"strptr.22" = getelementptr inbounds [4 x i8], [4 x i8]* @"str.22", i32 0, i32 0
-  %".29" = call i32 (i8*, ...) @"printf"(i8* %"strptr.22", i8* %"str_buf")
-  %"str_buf.1" = call i8* @"malloc"(i64 64)
-  %"strptr.23" = getelementptr inbounds [3 x i8], [3 x i8]* @"str.23", i32 0, i32 0
-  %".30" = call i32 (i8*, i8*, ...) @"sprintf"(i8* %"str_buf.1", i8* %"strptr.23", i1 1)
-  %"strptr.24" = getelementptr inbounds [4 x i8], [4 x i8]* @"str.24", i32 0, i32 0
-  %".31" = call i32 (i8*, ...) @"printf"(i8* %"strptr.24", i8* %"str_buf.1")
+  %".30" = call i32 (i8*, ...) @"printf"(i8* %"strptr.22", i8* %"str_buf")
   ret void
 }
 
@@ -110,11 +108,10 @@ entry:
 @"str.20" = private constant [4 x i8] c"%s\0a\00"
 @"str.21" = private constant [3 x i8] c"%d\00"
 @"str.22" = private constant [4 x i8] c"%s\0a\00"
-@"str.23" = private constant [3 x i8] c"%d\00"
-@"str.24" = private constant [4 x i8] c"%s\0a\00"
 define i32 @"main"()
 {
 entry:
+  %".2" = call i32 @"SetConsoleOutputCP"(i32 65001)
   call void @"__jss_global_init"()
   ret i32 0
 }

@@ -16,6 +16,8 @@ declare i8* @"strcpy"(i8* %".1", i8* %".2")
 
 declare i8* @"strcat"(i8* %".1", i8* %".2")
 
+declare i32 @"SetConsoleOutputCP"(i32 %".1")
+
 @"idade" = internal global i32 20
 @"nota" = internal global i32 7
 @"soma" = internal global i32 0
@@ -252,6 +254,7 @@ while_end.3:
 define i32 @"main"()
 {
 entry:
+  %".2" = call i32 @"SetConsoleOutputCP"(i32 65001)
   call void @"__jss_global_init"()
   ret i32 0
 }

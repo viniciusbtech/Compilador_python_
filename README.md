@@ -41,7 +41,25 @@ jss-compiler/
 
 ## Ambiente
 
-No Windows PowerShell:
+### Pre-requisitos do sistema
+
+- **Python 3.11+**
+- **clang** (LLVM) instalado e disponivel no `PATH`. E usado para compilar o `.ll` gerado em `.exe`.
+  Baixe em https://github.com/llvm/llvm-project/releases (instalador `LLVM-*-win64.exe`) e marque
+  a opcao "Add LLVM to the system PATH". Confira com:
+  ```powershell
+  clang --version
+  ```
+  Sem o clang, o compilador ainda gera o `.ll`, mas falha ao gerar o `.exe`
+  (`Erro: clang nao encontrado no PATH`).
+
+O projeto **nao inclui a pasta `.venv/`** (ela e local e ignorada pelo git/`.gitignore`).
+Cada pessoa que clonar ou receber o projeto precisa criar o proprio ambiente virtual
+seguindo os passos abaixo.
+
+### Criando o ambiente virtual
+
+No Windows PowerShell, na raiz do projeto:
 
 ```powershell
 python -m venv .venv
@@ -51,18 +69,32 @@ python -m pip install -e .
 pip install -r requirements-dev.txt
 ```
 
+Isso instala:
+- `requirements.txt`: dependencias de execucao (`antlr4-python3-runtime`, `llvmlite`)
+- `-e .`: o proprio pacote `jss_compiler` em modo editavel (permite `import jss_compiler` sem mexer no `PYTHONPATH`)
+- `requirements-dev.txt`: dependencias de desenvolvimento (`pytest`, para rodar os testes em `tests/`)
+
 Se nao instalar o pacote em modo editavel, defina o `PYTHONPATH` antes de executar:
 
 ```powershell
 $env:PYTHONPATH = "$PWD\src"
 ```
 
+### Verificando a instalacao
+
+```powershell
+python .\main.py .\examples\teste1.jss
+.\examples\teste1.exe
+```
+
+Se aparecer `Programa válido.` e o `.exe` rodar sem erro, o ambiente esta correto.
+
 ## Como executar o compilador
 ## ETAPA DE BUILD //Gerar .LL e .EXE SEM EXECUTAR
   python .\main.py arquivo.jss
   python .\main.py --build arquivo.jss
   python .\main.py .\examples\soma_run.jss
-## ETAPDA DE RUN GERA EXECUTAVVEL E JA EXECUTA
+## ETAPA DE BILD + RUN DIRETO 
   python .\main.py --run .\examples\teste1.jss
 
 ## fluxo de execução simplificado (GERA A IR E O EXE ) *** a) e b)
@@ -107,6 +139,9 @@ python .\main.py .\examples\teste9.jss
 python .\main.py .\examples\teste10.jss
 .\examples\teste10.exe  
 ```
+
+python .\main.py .\espc\espc1.jss
+.\espc\espc1.exe
 
 ## NO POWERSHELL NA PASTA ONDE O EXECUTAVEL ESTA NO WINDOS VOCE PODE EXECUTAR SIMPLESMENTE
 abrindo o powershell na pasta onde esta o exe 

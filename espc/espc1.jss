@@ -17,4 +17,5 @@ console.log (real(true));
 console.log (bool (1));
 console.log (bool (0.0) );
 console.log (str (10 + 5));
-console.log (str(true));
+
+
