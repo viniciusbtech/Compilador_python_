@@ -118,18 +118,18 @@ python .\main.py .\examples\nome_do_arquivo.jss
 Testes disponíveis (1 a 10):
 ```powershell BUILD DOS TESTES 
 
-python .\main.py .\examples\teste1.jss
-.\examples\teste1.exe  
-python .\main.py .\examples\teste2.jss
-.\examples\teste2.exe  
-python .\main.py .\examples\teste3.jss
-.\examples\teste3.exe  
-python .\main.py .\examples\teste4.jss
-.\examples\teste4.exe  
-python .\main.py .\examples\teste5.jss
-.\examples\teste5.exe  
-python .\main.py .\examples\teste6.jss
-.\examples\teste6.exe  
+python .\main.py .\examples\1_basics.jss
+.\examples\1_basics.exe  
+python .\main.py .\examples\2_operators.jss
+.\examples\2_operators.exe  
+python .\main.py .\examples\3_control_flow.jss
+.\examples\3_control_flow.exe  
+python .\main.py .\examples\4_strings_casts.jss
+.\examples\4_strings_casts.exe  
+python .\main.py .\examples\5_classes.jss
+.\examples\5_classes.exe  
+python .\main.py .\examples\6_functions.jss
+.\examples\6_functions.exe  
 python .\main.py .\examples\teste7.jss
 .\examples\teste7.exe  
 python .\main.py .\examples\teste8.jss
