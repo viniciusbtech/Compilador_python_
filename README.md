@@ -645,31 +645,9 @@ python3 main.py --help
 
 ### Endereços locais
 
-O projeto não inicia frontend, backend HTTP ou servidor web. Portanto, não existem endereços como `localhost:3000` ou `localhost:8000`.
 
 ---
 
-## 🎥 Vídeo do Projeto
-
-> 📌 O vídeo de apresentação ainda não foi adicionado.
-
-**Link do vídeo:**
-
-```text
-ADICIONAR_LINK_DO_VIDEO_AQUI
-```
-
-O vídeo poderá apresentar:
-
-* A estrutura do projeto.
-* A gramática da linguagem JSS.
-* O funcionamento do lexer e do parser.
-* A construção da AST.
-* A análise semântica.
-* A geração do LLVM IR.
-* A compilação com Clang.
-* A execução de um programa `.jss`.
-* A execução dos testes automatizados.
 
 <div align="center">
 
